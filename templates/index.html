@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Rating Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+
+        .search-section {
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        .search-box {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        #tickerInput {
+            padding: 15px 20px;
+            font-size: 1.2rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            width: 300px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        #tickerInput:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        #searchBtn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        #searchBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        #searchBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            padding: 40px;
+            display: none;
+        }
+
+        .ticker-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .ticker-symbol {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .timestamp {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .ratings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .rating-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border: 2px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .rating-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .platform-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .platform-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .zacks-logo { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .tipranks-logo { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .barchart-logo { background: linear-gradient(135deg, #f39c12, #e67e22); }
+
+        .platform-name {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .rating-display {
+            text-align: center;
+        }
+
+        .rating-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .rating-score {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .rating-description {
+            font-size: 1rem;
+            color: #888;
+        }
+
+        .status-success { color: #27ae60; }
+        .status-error { color: #e74c3c; }
+        .status-warning { color: #f39c12; }
+
+        .rating-strong-buy { color: #27ae60; background-color: #d5f4e6; }
+        .rating-buy { color: #2ecc71; background-color: #e8f8f5; }
+        .rating-hold { color: #f39c12; background-color: #fef9e7; }
+        .rating-sell { color: #e67e22; background-color: #fdf2e9; }
+        .rating-strong-sell { color: #e74c3c; background-color: #fadbd8; }
+        .rating-outperform { color: #27ae60; background-color: #d5f4e6; }
+        .rating-neutral { color: #f39c12; background-color: #fef9e7; }
+        .rating-underperform { color: #e74c3c; background-color: #fadbd8; }
+
+        .consensus-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .consensus-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .consensus-result {
+            font-size: 1.8rem;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .error-message {
+            background: #fadbd8;
+            color: #e74c3c;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .search-box {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            #tickerInput {
+                width: 100%;
+                max-width: 300px;
+                margin-bottom: 15px;
+            }
+
+            .ratings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ticker-symbol {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 Stock Rating Checker</h1>
+            <p>Get real-time ratings from Zacks, TipRanks, and Barchart</p>
+        </div>
+
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" id="tickerInput" placeholder="Enter ticker symbol (e.g., AAPL)" maxlength="10">
+                <button id="searchBtn" onclick="searchRatings()">Get Ratings</button>
+            </div>
+            <p style="color: #666; font-size: 0.9rem;">Enter a US stock ticker symbol to get ratings from all three platforms</p>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 15px; color: #666;">Fetching ratings from all platforms...</p>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="ticker-header">
+                <div class="ticker-symbol" id="tickerSymbol"></div>
+                <div class="timestamp" id="timestamp"></div>
+            </div>
+
+            <div class="ratings-grid" id="ratingsGrid">
+                <!-- Zacks Card -->
+                <div class="rating-card">
+                    <div class="platform-header">
+                        <div class="platform-logo zacks-logo">Z</div>
+                        <div class="platform-name">Zacks Investment Research</div>
+                    </div>
+                    <div class="rating-display">
+                        <div class="rating-value" id="zacksRating">-</div>
+                        <div class="rating-score" id="zacksRank">Rank: -</div>
+                        <div class="rating-description" id="zacksStatus">-</div>
+                    </div>
+                </div>
+
+                <!-- TipRanks Card -->
+                <div class="rating-card">
+                    <div class="platform-header">
+                        <div class="platform-logo tipranks-logo">T</div>
+                        <div class="platform-name">TipRanks</div>
+                    </div>
+                    <div class="rating-display">
+                        <div class="rating-value" id="tipranksRating">-</div>
+                        <div class="rating-score" id="tipranksScore">Smart Score: -/10</div>
+                        <div class="rating-description" id="tipranksStatus">-</div>
+                    </div>
+                </div>
+
+                <!-- Barchart Card -->
+                <div class="rating-card">
+                    <div class="platform-header">
+                        <div class="platform-logo barchart-logo">B</div>
+                        <div class="platform-name">Barchart</div>
+                    </div>
+                    <div class="rating-display">
+                        <div class="rating-value" id="barchartRating">-</div>
+                        <div class="rating-score">Opinion</div>
+                        <div class="rating-description" id="barchartStatus">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="consensus-section">
+                <div class="consensus-title">📊 Consensus Analysis</div>
+                <div class="consensus-result" id="consensusResult">-</div>
+                <div class="rating-description" id="consensusDescription">-</div>
+            </div>
+        </div>
+
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Allow Enter key to trigger search
+        document.getElementById('tickerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchRatings();
+            }
+        });
+
+        function searchRatings() {
+            const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+            
+            if (!ticker) {
+                showError('Please enter a ticker symbol');
+                return;
+            }
+
+            // Show loading state
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('searchBtn').disabled = true;
+            document.getElementById('searchBtn').textContent = 'Fetching...';
+
+            // Make API call
+            fetch('/get_ratings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ticker: ticker })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    displayResults(data);
+                }
+            })
+            .catch(error => {
+                showError('Network error: ' + error.message);
+            })
+            .finally(() => {
+                // Hide loading state
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('searchBtn').disabled = false;
+                document.getElementById('searchBtn').textContent = 'Get Ratings';
+            });
+        }
+
+        function displayResults(data) {
+            // Update ticker and timestamp
+            document.getElementById('tickerSymbol').textContent = data.ticker;
+            document.getElementById('timestamp').textContent = 'Updated: ' + data.timestamp;
+
+            // Update Zacks
+            updateRatingCard('zacks', data.zacks, data.zacks.rank ? `Rank: ${data.zacks.rank}` : '');
+
+            // Update TipRanks
+            updateRatingCard('tipranks', data.tipranks, data.tipranks.score ? `Smart Score: ${data.tipranks.score}/10` : '');
+
+            // Update Barchart
+            updateRatingCard('barchart', data.barchart, 'Opinion');
+
+            // Calculate and display consensus
+            displayConsensus(data);
+
+            // Show results
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        function updateRatingCard(platform, data, scoreText) {
+            const ratingElement = document.getElementById(platform + 'Rating');
+            const scoreElement = document.getElementById(platform + 'Score') || document.getElementById(platform + 'Rank');
+            const statusElement = document.getElementById(platform + 'Status');
+
+            const rating = data.rating || data.rating || 'N/A';
+            
+            ratingElement.textContent = rating;
+            if (scoreElement) scoreElement.textContent = scoreText;
+            statusElement.textContent = data.status || 'Unknown';
+
+            // Remove existing rating classes
+            ratingElement.className = 'rating-value';
+            
+            // Add appropriate class based on rating
+            const normalizedRating = rating.toLowerCase().replace(/\s+/g, '-');
+            ratingElement.classList.add('rating-' + normalizedRating);
+
+            // Set status color
+            statusElement.className = 'rating-description';
+            if (data.success) {
+                statusElement.classList.add('status-success');
+            } else {
+                statusElement.classList.add('status-error');
+            }
+        }
+
+        function displayConsensus(data) {
+            const consensusElement = document.getElementById('consensusResult');
+            const descriptionElement = document.getElementById('consensusDescription');
+
+            // Count positive and negative ratings
+            let positive = 0;
+            let negative = 0;
+            let neutral = 0;
+
+            // Analyze Zacks
+            if (data.zacks.success) {
+                const zacksRating = data.zacks.rating.toLowerCase();
+                if (zacksRating.includes('strong buy') || zacksRating.includes('buy')) positive++;
+                else if (zacksRating.includes('sell')) negative++;
+                else neutral++;
+            }
+
+            // Analyze TipRanks
+            if (data.tipranks.success) {
+                const tipranksRating = data.tipranks.rating.toLowerCase();
+                if (tipranksRating.includes('outperform')) positive++;
+                else if (tipranksRating.includes('underperform')) negative++;
+                else neutral++;
+            }
+
+            // Analyze Barchart
+            if (data.barchart.success) {
+                const barchartRating = data.barchart.rating.toLowerCase();
+                if (barchartRating.includes('strong buy') || barchartRating.includes('buy')) positive++;
+                else if (barchartRating.includes('sell')) negative++;
+                else neutral++;
+            }
+
+            // Determine consensus
+            let consensus = '';
+            let description = '';
+            let cssClass = '';
+
+            if (positive >= 2) {
+                consensus = '🔥 BUY CONSENSUS';
+                description = `${positive} of 3 platforms recommend buying`;
+                cssClass = 'rating-strong-buy';
+            } else if (negative >= 2) {
+                consensus = '⚠️ SELL CONSENSUS';
+                description = `${negative} of 3 platforms recommend selling`;
+                cssClass = 'rating-strong-sell';
+            } else if (neutral >= 2) {
+                consensus = '📊 HOLD CONSENSUS';
+                description = `${neutral} of 3 platforms recommend holding`;
+                cssClass = 'rating-hold';
+            } else {
+                consensus = '🤔 MIXED SIGNALS';
+                description = 'Platforms show conflicting recommendations';
+                cssClass = 'rating-neutral';
+            }
+
+            consensusElement.textContent = consensus;
+            consensusElement.className = 'consensus-result ' + cssClass;
+            descriptionElement.textContent = description;
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
