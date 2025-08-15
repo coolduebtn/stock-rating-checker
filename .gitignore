@@ -25,3 +25,7 @@ coverage.xml
 .DS_Store
 *.sqlite3
 instance/
+myenv/
+__pycache__/
+*.pyc
+.DS_Store
