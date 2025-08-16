@@ -27,11 +27,23 @@ try:
     from flask_limiter import Limiter
     from flask_limiter.util import get_remote_address
     
-    limiter = Limiter(
-        app,
-        key_func=get_remote_address,
-        default_limits=["200 per day", "50 per hour"] if os.getenv('RATE_LIMIT_ENABLED') == 'True' else None
-    )
+    # Compatible initialization for different Flask-Limiter versions
+    rate_limits = ["200 per day", "50 per hour"] if os.getenv('RATE_LIMIT_ENABLED') == 'True' else None
+    
+    try:
+        # Try newer Flask-Limiter API first
+        limiter = Limiter(
+            key_func=get_remote_address,
+            app=app,
+            default_limits=rate_limits
+        )
+    except TypeError:
+        # Fallback to older Flask-Limiter API
+        limiter = Limiter(
+            app=app,
+            key_func=get_remote_address,
+            default_limits=rate_limits
+        )
 except ImportError:
     limiter = None
 
