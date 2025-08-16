@@ -183,6 +183,7 @@
         .zacks-logo { background: linear-gradient(135deg, #e74c3c, #c0392b); }
         .tipranks-logo { background: linear-gradient(135deg, #3498db, #2980b9); }
         .barchart-logo { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .stockopedia-logo { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
 
         .platform-name {
             font-size: 1.4rem;
@@ -226,6 +227,11 @@
         .rating-outperform { color: #27ae60; background-color: #d5f4e6; }
         .rating-neutral { color: #f39c12; background-color: #fef9e7; }
         .rating-underperform { color: #e74c3c; background-color: #fadbd8; }
+        .rating-excellent { color: #27ae60; background-color: #d5f4e6; }
+        .rating-good { color: #2ecc71; background-color: #e8f8f5; }
+        .rating-average { color: #f39c12; background-color: #fef9e7; }
+        .rating-poor { color: #e67e22; background-color: #fdf2e9; }
+        .rating-very-poor { color: #e74c3c; background-color: #fadbd8; }
 
         .consensus-section {
             background: #f8f9fa;
@@ -285,7 +291,7 @@
     <div class="container">
         <div class="header">
             <h1>📈 Stock Rating Checker</h1>
-            <p>Get real-time ratings from Zacks, TipRanks, and Barchart</p>
+            <p>Get real-time ratings from Zacks, TipRanks, Barchart, and Stockopedia</p>
         </div>
 
         <div class="search-section">
@@ -293,7 +299,7 @@
                 <input type="text" id="tickerInput" placeholder="Enter ticker symbol (e.g., AAPL)" maxlength="10">
                 <button id="searchBtn" onclick="searchRatings()">Get Ratings</button>
             </div>
-            <p style="color: #666; font-size: 0.9rem;">Enter a US stock ticker symbol to get ratings from all three platforms</p>
+            <p style="color: #666; font-size: 0.9rem;">Enter a US stock ticker symbol to get ratings from all four platforms</p>
             
             <div class="loading" id="loading">
                 <div class="spinner"></div>
@@ -344,6 +350,19 @@
                         <div class="rating-value" id="barchartRating">-</div>
                         <div class="rating-score">Opinion</div>
                         <div class="rating-description" id="barchartStatus">-</div>
+                    </div>
+                </div>
+
+                <!-- Stockopedia Card -->
+                <div class="rating-card">
+                    <div class="platform-header">
+                        <div class="platform-logo stockopedia-logo">S</div>
+                        <div class="platform-name">Stockopedia</div>
+                    </div>
+                    <div class="rating-display">
+                        <div class="rating-value" id="stockopediaRating">-</div>
+                        <div class="rating-score" id="stockopediaScore">StockRank: -/100</div>
+                        <div class="rating-description" id="stockopediaStatus">-</div>
                     </div>
                 </div>
             </div>
@@ -422,6 +441,9 @@
             // Update Barchart
             updateRatingCard('barchart', data.barchart, 'Opinion');
 
+            // Update Stockopedia
+            updateStockopediaCard('stockopedia', data.stockopedia);
+
             // Calculate and display consensus
             displayConsensus(data);
 
@@ -456,6 +478,34 @@
             }
         }
 
+        function updateStockopediaCard(platform, data) {
+            const ratingElement = document.getElementById(platform + 'Rating');
+            const scoreElement = document.getElementById(platform + 'Score');
+            const statusElement = document.getElementById(platform + 'Status');
+
+            const stockrank = data.stockrank || 'N/A';
+            const category = data.category || 'Unknown';
+            
+            ratingElement.textContent = category;
+            if (scoreElement) scoreElement.textContent = `StockRank: ${stockrank}/100`;
+            statusElement.textContent = data.status || 'Unknown';
+
+            // Remove existing rating classes
+            ratingElement.className = 'rating-value';
+            
+            // Add appropriate class based on category
+            const normalizedCategory = category.toLowerCase().replace(/\s+/g, '-');
+            ratingElement.classList.add('rating-' + normalizedCategory);
+
+            // Set status color
+            statusElement.className = 'rating-description';
+            if (data.success) {
+                statusElement.classList.add('status-success');
+            } else {
+                statusElement.classList.add('status-error');
+            }
+        }
+
         function displayConsensus(data) {
             const consensusElement = document.getElementById('consensusResult');
             const descriptionElement = document.getElementById('consensusDescription');
@@ -464,9 +514,11 @@
             let positive = 0;
             let negative = 0;
             let neutral = 0;
+            let total = 0;
 
             // Analyze Zacks
             if (data.zacks.success) {
+                total++;
                 const zacksRating = data.zacks.rating.toLowerCase();
                 if (zacksRating.includes('strong buy') || zacksRating.includes('buy')) positive++;
                 else if (zacksRating.includes('sell')) negative++;
@@ -475,6 +527,7 @@
 
             // Analyze TipRanks
             if (data.tipranks.success) {
+                total++;
                 const tipranksRating = data.tipranks.rating.toLowerCase();
                 if (tipranksRating.includes('outperform')) positive++;
                 else if (tipranksRating.includes('underperform')) negative++;
@@ -483,9 +536,19 @@
 
             // Analyze Barchart
             if (data.barchart.success) {
+                total++;
                 const barchartRating = data.barchart.rating.toLowerCase();
                 if (barchartRating.includes('strong buy') || barchartRating.includes('buy')) positive++;
                 else if (barchartRating.includes('sell')) negative++;
+                else neutral++;
+            }
+
+            // Analyze Stockopedia
+            if (data.stockopedia.success) {
+                total++;
+                const stockopediaCategory = data.stockopedia.category.toLowerCase();
+                if (stockopediaCategory.includes('excellent') || stockopediaCategory.includes('good')) positive++;
+                else if (stockopediaCategory.includes('poor')) negative++;
                 else neutral++;
             }
 
@@ -494,17 +557,19 @@
             let description = '';
             let cssClass = '';
 
-            if (positive >= 2) {
+            const majority = Math.ceil(total / 2);
+
+            if (positive >= majority) {
                 consensus = '🔥 BUY CONSENSUS';
-                description = `${positive} of 3 platforms recommend buying`;
+                description = `${positive} of ${total} platforms recommend buying`;
                 cssClass = 'rating-strong-buy';
-            } else if (negative >= 2) {
+            } else if (negative >= majority) {
                 consensus = '⚠️ SELL CONSENSUS';
-                description = `${negative} of 3 platforms recommend selling`;
+                description = `${negative} of ${total} platforms recommend selling`;
                 cssClass = 'rating-strong-sell';
-            } else if (neutral >= 2) {
+            } else if (neutral >= majority) {
                 consensus = '📊 HOLD CONSENSUS';
-                description = `${neutral} of 3 platforms recommend holding`;
+                description = `${neutral} of ${total} platforms recommend holding`;
                 cssClass = 'rating-hold';
             } else {
                 consensus = '🤔 MIXED SIGNALS';

@@ -396,6 +396,70 @@ def get_barchart_rating(ticker):
     except Exception as e:
         return {'rating': 'Error', 'status': str(e)[:50], 'success': False}
 
+def get_stockopedia_rating(ticker):
+    """Fetch Stockopedia StockRank - reliable data source without blocking"""
+    try:
+        ticker = ticker.upper().strip()
+        
+        # Stockopedia URL format - using NSQ for NASDAQ stocks (most common US exchange)
+        url = f"https://www.stockopedia.com/share-prices/{ticker.lower()}-NSQ:{ticker}/"
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        
+        # Add random delay to appear more human-like
+        time.sleep(random.uniform(0.5, 1.5))
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        # Handle different response codes
+        if response.status_code == 404:
+            return {'stockrank': 'N/A', 'style': 'N/A', 'status': 'Stock not found', 'success': False}
+        elif response.status_code != 200:
+            return {'stockrank': 'N/A', 'style': 'N/A', 'status': f'HTTP {response.status_code}', 'success': False}
+        
+        # Extract StockRank from JSON data embedded in the page
+        stockrank_match = re.search(r'"stockRank":(\d+)', response.text)
+        if stockrank_match:
+            stockrank = int(stockrank_match.group(1))
+            
+            # Extract style (company classification)
+            style_match = re.search(r'"style":"([^"]+)"', response.text)
+            
+            # Map StockRank to categories for better understanding
+            if stockrank >= 80:
+                category = 'Excellent'
+            elif stockrank >= 60:
+                category = 'Good'
+            elif stockrank >= 40:
+                category = 'Average'
+            elif stockrank >= 20:
+                category = 'Poor'
+            else:
+                category = 'Very Poor'
+            
+            return {
+                'stockrank': str(stockrank),
+                'category': category,
+                'style': style_match.group(1) if style_match else 'Unknown',
+                'status': 'Found',
+                'success': True
+            }
+        else:
+            # Check if the page loaded but just doesn't have StockRank data
+            if ticker.upper() in response.text:
+                return {'stockrank': 'NR', 'style': 'Not Rated', 'status': 'Stock found but not rated', 'success': True}
+            else:
+                return {'stockrank': 'N/A', 'style': 'N/A', 'status': 'Stock not found', 'success': False}
+        
+    except requests.exceptions.Timeout:
+        return {'stockrank': 'TIMEOUT', 'style': 'Timeout', 'status': 'Request timeout', 'success': False}
+    except requests.exceptions.ConnectionError:
+        return {'stockrank': 'CONN_ERROR', 'style': 'Connection Error', 'status': 'Connection failed', 'success': False}
+    except Exception as e:
+        return {'stockrank': 'Error', 'style': 'Error', 'status': str(e)[:50], 'success': False}
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -413,7 +477,8 @@ def get_ratings():
         'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'zacks': {'status': 'Fetching...'},
         'tipranks': {'status': 'Fetching...'},
-        'barchart': {'status': 'Fetching...'}
+        'barchart': {'status': 'Fetching...'},
+        'stockopedia': {'status': 'Fetching...'}
     }
     
     try:
@@ -431,6 +496,11 @@ def get_ratings():
         print(f"Fetching Barchart rating for {ticker}...")
         barchart_result = get_barchart_rating(ticker)
         results['barchart'] = barchart_result
+        
+        # Fetch Stockopedia rating
+        print(f"Fetching Stockopedia rating for {ticker}...")
+        stockopedia_result = get_stockopedia_rating(ticker)
+        results['stockopedia'] = stockopedia_result
         
         return jsonify(results)
     
