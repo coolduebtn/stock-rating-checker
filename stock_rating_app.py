@@ -504,10 +504,11 @@ def get_marketwatch_analyst_estimates(ticker):
         ticker = ticker.upper().strip()
         url = f"https://www.marketwatch.com/investing/stock/{ticker.lower()}/analystestimates"
         
+        # Enhanced headers to avoid blocking in production
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.7',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
@@ -516,21 +517,30 @@ def get_marketwatch_analyst_estimates(ticker):
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'none',
             'Sec-Fetch-User': '?1',
-            'Cache-Control': 'max-age=0'
+            'Cache-Control': 'max-age=0',
+            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'Referer': 'https://www.marketwatch.com/',
+            'Origin': 'https://www.marketwatch.com'
         }
         
         # Add random delay to appear more human-like
-        time.sleep(random.uniform(0.5, 1.5))
+        time.sleep(random.uniform(1.0, 2.5))
         
-        response = requests.get(url, headers=headers, timeout=15)
+        response = requests.get(url, headers=headers, timeout=20)
         
-        # Handle different error codes
-        if response.status_code == 403:
-            return {'recommendation': 'Forbidden', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Access forbidden', 'success': False}
+        # Enhanced error code handling for production
+        if response.status_code == 401:
+            return {'recommendation': 'Unauthorized', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Access unauthorized - site blocking requests', 'success': False}
+        elif response.status_code == 403:
+            return {'recommendation': 'Forbidden', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Access forbidden - IP blocked', 'success': False}
         elif response.status_code == 429:
-            return {'recommendation': 'Rate Limited', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Too many requests', 'success': False}
+            return {'recommendation': 'Rate Limited', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Too many requests - rate limited', 'success': False}
         elif response.status_code == 404:
             return {'recommendation': 'N/A', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Stock not found', 'success': False}
+        elif response.status_code == 503:
+            return {'recommendation': 'Service Unavailable', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Service temporarily unavailable', 'success': False}
         elif response.status_code != 200:
             return {'recommendation': 'N/A', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': f'HTTP {response.status_code}', 'success': False}
         
@@ -539,9 +549,13 @@ def get_marketwatch_analyst_estimates(ticker):
         # Check if we got a valid stock page first
         page_title = soup.find('title')
         if not page_title:
-            return {'recommendation': 'N/A', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Invalid page', 'success': False}
+            return {'recommendation': 'N/A', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Invalid page response', 'success': False}
         
         title_text = page_title.get_text().upper()
+        
+        # Check for error pages or access denied
+        if 'ACCESS DENIED' in title_text or 'UNAUTHORIZED' in title_text or 'BLOCKED' in title_text:
+            return {'recommendation': 'Blocked', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Access blocked by website', 'success': False}
         
         # Check for error pages or redirects
         if 'NOT FOUND' in title_text or 'ERROR' in title_text or '404' in title_text:
@@ -552,9 +566,9 @@ def get_marketwatch_analyst_estimates(ticker):
         target_price = None
         num_ratings = None
         
-        # Find the table with analyst estimates data
+        # Method 1: Find the table with analyst estimates data
         table = soup.find('table', class_='table value-pairs no-heading font--lato')
-        if table:
+        if table and table.find('tbody'):
             rows = table.find('tbody').find_all('tr', class_='table__row')
             
             for row in rows:
@@ -570,13 +584,34 @@ def get_marketwatch_analyst_estimates(ticker):
                     elif 'Number Of Ratings' in label:
                         num_ratings = value
         
-        # If table method didn't work, try alternative selectors
+        # Method 2: Alternative table structure
         if not recommendation:
-            # Look for recommendation in various possible locations
+            # Look for different table structures
+            tables = soup.find_all('table')
+            for table in tables:
+                table_text = table.get_text()
+                if 'Average Recommendation' in table_text:
+                    rows = table.find_all('tr')
+                    for row in rows:
+                        cells = row.find_all(['td', 'th'])
+                        if len(cells) >= 2:
+                            label = cells[0].get_text(strip=True)
+                            value = cells[1].get_text(strip=True)
+                            
+                            if 'Average Recommendation' in label:
+                                recommendation = value
+                            elif 'Average Target Price' in label:
+                                target_price = value
+                            elif 'Number Of Ratings' in label:
+                                num_ratings = value
+        
+        # Method 3: Look for recommendation in various possible locations (fallback)
+        if not recommendation:
             rec_selectors = [
                 'td:contains("Average Recommendation") + td',
                 '[data-module="AnalystEstimates"] td:contains("Average Recommendation") + td',
-                '.analyst-estimates td:contains("Average Recommendation") + td'
+                '.analyst-estimates td:contains("Average Recommendation") + td',
+                '.table td:contains("recommendation") + td'
             ]
             
             for selector in rec_selectors:
@@ -589,7 +624,7 @@ def get_marketwatch_analyst_estimates(ticker):
                     continue
         
         # Check if it's a valid stock page by looking for the ticker
-        if ticker.lower() in title_text.lower() or ticker.upper() in title_text:
+        if ticker.lower() in title_text.lower() or ticker.upper() in title_text or ticker in soup.get_text().upper():
             if recommendation:
                 return {
                     'recommendation': recommendation,
@@ -603,7 +638,7 @@ def get_marketwatch_analyst_estimates(ticker):
                     'recommendation': 'Not Available',
                     'target_price': 'N/A',
                     'num_ratings': 'N/A',
-                    'status': 'Stock found but no analyst estimates',
+                    'status': 'Stock found but no analyst estimates available',
                     'success': True
                 }
         else:
@@ -611,14 +646,16 @@ def get_marketwatch_analyst_estimates(ticker):
                 'recommendation': 'N/A',
                 'target_price': 'N/A',
                 'num_ratings': 'N/A',
-                'status': 'Stock not found',
+                'status': 'Stock not found on page',
                 'success': False
             }
         
     except requests.exceptions.Timeout:
-        return {'recommendation': 'Timeout', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Request timeout', 'success': False}
+        return {'recommendation': 'Timeout', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Request timeout (server may be slow)', 'success': False}
     except requests.exceptions.ConnectionError:
-        return {'recommendation': 'Connection Error', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Connection failed', 'success': False}
+        return {'recommendation': 'Connection Error', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Connection failed (network issue)', 'success': False}
+    except requests.exceptions.RequestException as e:
+        return {'recommendation': 'Request Error', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': f'Request failed: {str(e)[:30]}', 'success': False}
     except Exception as e:
         return {'recommendation': 'Error', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': str(e)[:50], 'success': False}
 
