@@ -305,17 +305,54 @@ def get_barchart_rating(ticker):
         # Look for Barchart Opinion/Signal rating
         rating = None
         
-        # Method 1: Look for opinion or signal in various selectors
-        rating_selectors = [
-            '[class*="opinion"]',
-            '[class*="signal"]',
-            '[class*="rating"]',
-            '[class*="recommendation"]',
-            '[data-ng-bind*="opinion"]',
-            '.bc-opinion',
-            '.opinion-text',
-            '[class*="analyst"]'
-        ]
+        # Method 1: Look for Barchart Technical Opinion (most reliable)
+        technical_opinion = soup.find('div', class_='technical-opinion-widget')
+        if technical_opinion:
+            # Look for the rating link with class containing color indicators
+            rating_link = technical_opinion.find('a', href=re.compile(r'/opinion'))
+            if rating_link:
+                rating_text = rating_link.get_text(strip=True).lower()
+                rating_text = re.sub(r'\s+', ' ', rating_text)  # Normalize whitespace
+                
+                if 'strong buy' in rating_text:
+                    rating = 'Strong Buy'
+                elif 'buy' in rating_text:
+                    rating = 'Buy'
+                elif 'strong sell' in rating_text:
+                    rating = 'Strong Sell'
+                elif 'sell' in rating_text:
+                    rating = 'Sell'
+                elif 'hold' in rating_text:
+                    rating = 'Hold'
+        
+        # Method 2: Look for the main rating element (previous method)
+        if not rating:
+            rating_element = soup.find('div', class_=['rating', 'buy']) or soup.find('div', class_=['rating', 'sell']) or soup.find('div', class_=['rating', 'hold'])
+            if rating_element:
+                rating_text = rating_element.get_text(strip=True).lower()
+                if 'strong buy' in rating_text:
+                    rating = 'Strong Buy'
+                elif 'buy' in rating_text:
+                    rating = 'Buy'
+                elif 'strong sell' in rating_text:
+                    rating = 'Strong Sell'
+                elif 'sell' in rating_text:
+                    rating = 'Sell'
+                elif 'hold' in rating_text:
+                    rating = 'Hold'
+        
+        # Method 3: Look for opinion or signal in various selectors (fallback)
+        if not rating:
+            rating_selectors = [
+                '[class*="opinion"]',
+                '[class*="signal"]',
+                '[class*="rating"]',
+                '[class*="recommendation"]',
+                '[data-ng-bind*="opinion"]',
+                '.bc-opinion',
+                '.opinion-text',
+                '[class*="analyst"]'
+            ]
         
         # Barchart rating keywords and their standardized forms
         rating_keywords = {
@@ -337,27 +374,28 @@ def get_barchart_rating(ticker):
             'negative': 'Sell'
         }
         
-        # Search in specific elements first
-        for selector in rating_selectors:
-            try:
-                rating_elements = soup.select(selector)
-                for element in rating_elements:
-                    text = element.get_text(strip=True).lower()
-                    # Check for exact matches first
-                    for keyword, mapped_rating in rating_keywords.items():
-                        if keyword in text:
-                            # Make sure it's not part of a larger word
-                            if re.search(rf'\b{re.escape(keyword)}\b', text):
-                                rating = mapped_rating
-                                break
+        # Search in specific elements (fallback method)
+        if not rating:
+            for selector in rating_selectors:
+                try:
+                    rating_elements = soup.select(selector)
+                    for element in rating_elements:
+                        text = element.get_text(strip=True).lower()
+                        # Check for exact matches first
+                        for keyword, mapped_rating in rating_keywords.items():
+                            if keyword in text:
+                                # Make sure it's not part of a larger word
+                                if re.search(rf'\b{re.escape(keyword)}\b', text):
+                                    rating = mapped_rating
+                                    break
+                        if rating:
+                            break
                     if rating:
                         break
-                if rating:
-                    break
-            except:
-                continue
+                except:
+                    continue
         
-        # Method 2: Search in page text with context validation
+        # Method 4: Search in page text with context validation (last resort)
         if not rating:
             page_text = soup.get_text().lower()
             for keyword, mapped_rating in rating_keywords.items():
