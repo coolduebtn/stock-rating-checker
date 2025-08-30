@@ -490,105 +490,66 @@
             // Initialize results display immediately
             initializeResultsDisplay(ticker);
 
-            // Fetch platforms in parallel but update UI as each completes
-            fetchPlatformsWithRealTimeUpdates(ticker);
-        }
-
-        async function fetchPlatformsWithRealTimeUpdates(ticker) {
-            const platforms = [
-                { name: 'zacks', func: () => fetchSinglePlatform('zacks', ticker) },
-                { name: 'tipranks', func: () => fetchSinglePlatform('tipranks', ticker) },
-                { name: 'barchart', func: () => fetchSinglePlatform('barchart', ticker) },
-                { name: 'stockopedia', func: () => fetchSinglePlatform('stockopedia', ticker) },
-                { name: 'stockstory', func: () => fetchSinglePlatform('stockstory', ticker) },
-                { name: 'marketwatch', func: () => fetchSinglePlatform('marketwatch', ticker) }
-            ];
-
-            let completed = 0;
-            const allData = { ticker: ticker };
-
-            // Start all requests in parallel
-            const promises = platforms.map(async (platform) => {
-                try {
-                    const data = await platform.func();
-                    
-                    // Update UI immediately when this platform completes
-                    allData[platform.name] = data;
-                    updatePlatformCard(platform.name, data);
-                    
-                    completed++;
-                    updateProgress(completed, platforms.length);
-                    
-                    // Update consensus if all are done
-                    if (completed === platforms.length) {
-                        allData.timestamp = new Date().toLocaleString();
-                        displayConsensus(allData);
-                        document.getElementById('timestamp').textContent = 'Updated: ' + allData.timestamp;
-                        document.getElementById('loading').style.display = 'none';
-                    }
-                    
-                    return data;
-                } catch (error) {
-                    console.error(`Error fetching ${platform.name}:`, error);
-                    const errorData = {
-                        rating: 'Error',
-                        status: 'Failed to load',
-                        success: false
-                    };
-                    allData[platform.name] = errorData;
-                    updatePlatformCard(platform.name, errorData);
-                    
-                    completed++;
-                    updateProgress(completed, platforms.length);
-                    
-                    if (completed === platforms.length) {
-                        allData.timestamp = new Date().toLocaleString();
-                        displayConsensus(allData);
-                        document.getElementById('timestamp').textContent = 'Updated: ' + allData.timestamp;
-                        document.getElementById('loading').style.display = 'none';
-                    }
-                    
-                    return errorData;
-                }
-            });
-
-            // Wait for all to complete
-            try {
-                await Promise.all(promises);
-            } catch (error) {
-                showError('Error fetching ratings: ' + error.message);
-            } finally {
-                document.getElementById('searchBtn').disabled = false;
-                document.getElementById('searchBtn').textContent = 'Get Ratings';
-            }
-        }
-
-        async function fetchSinglePlatform(platform, ticker) {
-            const response = await fetch('/get_ratings', {
+            // Use single parallel request (fastest approach)
+            fetch('/get_ratings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ ticker: ticker, platform: platform })
+                body: JSON.stringify({ ticker: ticker })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    // Simulate progressive loading for better UX
+                    displayResultsProgressively(data);
+                }
+            })
+            .catch(error => {
+                showError('Network error: ' + error.message);
+            })
+            .finally(() => {
+                document.getElementById('searchBtn').disabled = false;
+                document.getElementById('searchBtn').textContent = 'Get Ratings';
             });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            if (data.error) {
-                throw new Error(data.error);
-            }
-
-            // Return the specific platform data
-            return data[platform] || { rating: 'N/A', status: 'No data', success: false };
         }
 
-        function updateProgress(completed, total) {
-            document.getElementById('timestamp').textContent = 
-                `Loading... ${completed}/${total} platforms complete`;
+        function displayResultsProgressively(data) {
+            // Update ticker and timestamp
+            document.getElementById('tickerSymbol').textContent = data.ticker;
+            
+            // Platform display order (fastest to slowest typically)
+            const platforms = [
+                { name: 'zacks', delay: 100 },
+                { name: 'stockopedia', delay: 300 },
+                { name: 'barchart', delay: 500 },
+                { name: 'tipranks', delay: 800 },
+                { name: 'stockstory', delay: 1200 },
+                { name: 'marketwatch', delay: 1600 }
+            ];
+
+            let completed = 0;
+
+            platforms.forEach((platform, index) => {
+                setTimeout(() => {
+                    // Update the specific platform
+                    updatePlatformCard(platform.name, data[platform.name]);
+                    completed++;
+                    
+                    // Update progress
+                    document.getElementById('timestamp').textContent = 
+                        `Loading... ${completed}/${platforms.length} platforms complete`;
+                    
+                    // If all are done, finalize
+                    if (completed === platforms.length) {
+                        document.getElementById('timestamp').textContent = 'Updated: ' + data.timestamp;
+                        displayConsensus(data);
+                        document.getElementById('loading').style.display = 'none';
+                    }
+                }, platform.delay);
+            });
         }
 
         function updatePlatformCard(platform, data) {
