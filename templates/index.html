@@ -167,6 +167,31 @@
             margin-bottom: 20px;
         }
 
+        .platform-link {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: inherit;
+            flex: 1;
+            transition: opacity 0.2s ease;
+        }
+
+        .platform-link:hover {
+            opacity: 0.8;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .platform-link:visited {
+            color: inherit;
+        }
+
+        .platform-info {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
         .platform-logo {
             width: 40px;
             height: 40px;
@@ -318,8 +343,12 @@
                 <!-- Zacks Card -->
                 <div class="rating-card">
                     <div class="platform-header">
-                        <div class="platform-logo zacks-logo">Z</div>
-                        <div class="platform-name">Zacks Investment Research</div>
+                        <a href="#" class="platform-link" id="zacksLink" target="_blank" rel="noopener noreferrer">
+                            <div class="platform-info">
+                                <div class="platform-logo zacks-logo">Z</div>
+                                <div class="platform-name">Zacks Investment Research</div>
+                            </div>
+                        </a>
                     </div>
                     <div class="rating-display">
                         <div class="rating-value" id="zacksRating">-</div>
@@ -331,8 +360,12 @@
                 <!-- TipRanks Card -->
                 <div class="rating-card">
                     <div class="platform-header">
-                        <div class="platform-logo tipranks-logo">T</div>
-                        <div class="platform-name">TipRanks</div>
+                        <a href="#" class="platform-link" id="tipranksLink" target="_blank" rel="noopener noreferrer">
+                            <div class="platform-info">
+                                <div class="platform-logo tipranks-logo">T</div>
+                                <div class="platform-name">TipRanks</div>
+                            </div>
+                        </a>
                     </div>
                     <div class="rating-display">
                         <div class="rating-value" id="tipranksRating">-</div>
@@ -342,14 +375,18 @@
                 </div>
 
                 <!-- Barchart Card -->
+                                <!-- Barchart Card -->
                 <div class="rating-card">
                     <div class="platform-header">
-                        <div class="platform-logo barchart-logo">B</div>
-                        <div class="platform-name">Barchart</div>
+                        <a href="#" class="platform-link" id="barchartLink" target="_blank" rel="noopener noreferrer">
+                            <div class="platform-info">
+                                <div class="platform-logo barchart-logo">B</div>
+                                <div class="platform-name">Barchart</div>
+                            </div>
+                        </a>
                     </div>
                     <div class="rating-display">
                         <div class="rating-value" id="barchartRating">-</div>
-                        <div class="rating-score">Opinion</div>
                         <div class="rating-description" id="barchartStatus">-</div>
                     </div>
                 </div>
@@ -357,8 +394,12 @@
                 <!-- Stockopedia Card -->
                 <div class="rating-card">
                     <div class="platform-header">
-                        <div class="platform-logo stockopedia-logo">S</div>
-                        <div class="platform-name">Stockopedia</div>
+                        <a href="#" class="platform-link" id="stockopediaLink" target="_blank" rel="noopener noreferrer">
+                            <div class="platform-info">
+                                <div class="platform-logo stockopedia-logo">S</div>
+                                <div class="platform-name">Stockopedia</div>
+                            </div>
+                        </a>
                     </div>
                     <div class="rating-display">
                         <div class="rating-value" id="stockopediaRating">-</div>
@@ -370,8 +411,12 @@
                 <!-- StockStory Card -->
                 <div class="rating-card">
                     <div class="platform-header">
-                        <div class="platform-logo stockstory-logo">SS</div>
-                        <div class="platform-name">StockStory</div>
+                        <a href="#" class="platform-link" id="stockstoryLink" target="_blank" rel="noopener noreferrer">
+                            <div class="platform-info">
+                                <div class="platform-logo stockstory-logo">SS</div>
+                                <div class="platform-name">StockStory</div>
+                            </div>
+                        </a>
                     </div>
                     <div class="rating-display">
                         <div class="rating-value" id="stockstoryRating">-</div>
@@ -446,6 +491,9 @@
             document.getElementById('tickerSymbol').textContent = data.ticker;
             document.getElementById('timestamp').textContent = 'Updated: ' + data.timestamp;
 
+            // Update platform links
+            updatePlatformLinks(data.ticker);
+
             // Update Zacks
             updateRatingCard('zacks', data.zacks, data.zacks.rank ? `Rank: ${data.zacks.rank}` : '');
 
@@ -466,6 +514,26 @@
 
             // Show results
             document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        function updatePlatformLinks(ticker) {
+            const tickerUpper = ticker.toUpperCase();
+            const tickerLower = ticker.toLowerCase();
+            
+            // Update Zacks link
+            document.getElementById('zacksLink').href = `https://www.zacks.com/stock/quote/${tickerUpper}`;
+            
+            // Update TipRanks link
+            document.getElementById('tipranksLink').href = `https://www.tipranks.com/stocks/${tickerLower}`;
+            
+            // Update Barchart link
+            document.getElementById('barchartLink').href = `https://www.barchart.com/stocks/quotes/${tickerLower}/overview`;
+            
+            // Update Stockopedia link
+            document.getElementById('stockopediaLink').href = `https://www.stockopedia.com/share-prices/${tickerLower}-NSQ:${tickerUpper}/`;
+            
+            // Update StockStory link (default to NASDAQ, could be enhanced to show actual exchange used)
+            document.getElementById('stockstoryLink').href = `https://stockstory.org/us/stocks/nasdaq/${tickerLower}`;
         }
 
         function updateRatingCard(platform, data, scoreText) {
@@ -534,6 +602,13 @@
             ratingElement.textContent = rating;
             sentimentElement.textContent = `Sentiment: ${sentiment}`;
             statusElement.textContent = data.status || 'Unknown';
+
+            // Update StockStory link with correct exchange if available
+            if (data.exchange && data.exchange !== 'N/A') {
+                const ticker = document.getElementById('tickerSymbol').textContent.toLowerCase();
+                const exchange = data.exchange.toLowerCase();
+                document.getElementById('stockstoryLink').href = `https://stockstory.org/us/stocks/${exchange}/${ticker}`;
+            }
 
             // Remove existing rating classes
             ratingElement.className = 'rating-value';
