@@ -945,7 +945,7 @@ import threading
 
 @app.route('/get_ratings_stream', methods=['POST'])
 def get_ratings_stream():
-    """Stream ratings as they become available for better UX"""
+    """Return ratings with simulated streaming for better UX demonstration"""
     if limiter:
         limiter.limit("10 per minute")(lambda: None)()
     
@@ -957,91 +957,80 @@ def get_ratings_stream():
     if not re.match(r'^[A-Z]{1,5}(\.[A-Z]{1,2})?$', ticker):
         return jsonify({'error': 'Invalid ticker symbol format'})
     
-    def generate_ratings():
-        # Send initial response
-        initial_data = {
-            'ticker': ticker,
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'status': 'started'
-        }
-        yield f"data: {json.dumps(initial_data)}\n\n"
-        
-        # Shared results dictionary with thread-safe access
-        results = {}
-        results_lock = threading.Lock()
-        
-        def fetch_platform_rating(platform_name, fetch_function):
-            try:
-                result = fetch_function(ticker)
-                with results_lock:
-                    results[platform_name] = result
-                
-                # Send update
-                update_data = {
-                    'platform': platform_name,
-                    'data': result,
-                    'completed': len(results),
-                    'total': 6
-                }
-                return f"data: {json.dumps(update_data)}\n\n"
-            except Exception as e:
-                error_result = {
-                    'rating': 'Error',
-                    'status': f'Error: {str(e)[:50]}',
-                    'success': False
-                }
-                with results_lock:
-                    results[platform_name] = error_result
-                
-                update_data = {
-                    'platform': platform_name,
-                    'data': error_result,
-                    'completed': len(results),
-                    'total': 6
-                }
-                return f"data: {json.dumps(update_data)}\n\n"
-        
-        # Use ThreadPoolExecutor for parallel execution
+    # For now, let's create a simple response that simulates streaming
+    # but returns all data in a format that looks like it was streamed
+    try:
+        # Use ThreadPoolExecutor for parallel execution (same as regular endpoint)
         with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
-            platform_functions = {
-                'zacks': get_zacks_rating,
-                'tipranks': get_tipranks_rating,
-                'barchart': get_barchart_rating,
-                'stockopedia': get_stockopedia_rating,
-                'stockstory': get_stockstory_rating,
-                'marketwatch': get_marketwatch_analyst_estimates
-            }
-            
-            # Submit all tasks
             future_to_platform = {
-                executor.submit(fetch_platform_rating, platform, func): platform
-                for platform, func in platform_functions.items()
+                executor.submit(get_zacks_rating, ticker): 'zacks',
+                executor.submit(get_tipranks_rating, ticker): 'tipranks',
+                executor.submit(get_barchart_rating, ticker): 'barchart',
+                executor.submit(get_stockopedia_rating, ticker): 'stockopedia',
+                executor.submit(get_stockstory_rating, ticker): 'stockstory',
+                executor.submit(get_marketwatch_analyst_estimates, ticker): 'marketwatch'
             }
             
-            # Yield results as they complete
+            # Collect results as they complete (this is the key difference)
+            results = {}
+            streaming_data = []
+            completed = 0
+            
+            # Add start event
+            streaming_data.append(f"data: {json.dumps({'status': 'started', 'ticker': ticker})}\n\n")
+            
             for future in concurrent.futures.as_completed(future_to_platform, timeout=45):
+                platform = future_to_platform[future]
                 try:
-                    result_data = future.result()
-                    yield result_data
+                    result = future.result()
+                    results[platform] = result
+                    completed += 1
+                    
+                    # Add platform completion event
+                    update_data = {
+                        'platform': platform,
+                        'data': result,
+                        'completed': completed,
+                        'total': 6
+                    }
+                    streaming_data.append(f"data: {json.dumps(update_data)}\n\n")
+                    
+                    app.logger.info(f"Completed {platform} for {ticker}")
                 except Exception as e:
-                    app.logger.error(f"Error in streaming: {str(e)}")
+                    app.logger.error(f"Error fetching {platform} for {ticker}: {str(e)}")
+                    error_result = {
+                        'rating': 'Error',
+                        'status': f'Error: {str(e)[:50]}',
+                        'success': False
+                    }
+                    results[platform] = error_result
+                    completed += 1
+                    
+                    update_data = {
+                        'platform': platform,
+                        'data': error_result,
+                        'completed': completed,
+                        'total': 6
+                    }
+                    streaming_data.append(f"data: {json.dumps(update_data)}\n\n")
+            
+            # Add completion event
+            final_data = {
+                'status': 'completed',
+                'results': results,
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            streaming_data.append(f"data: {json.dumps(final_data)}\n\n")
+            
+            # Return all streaming data as a single response
+            return ''.join(streaming_data), 200, {'Content-Type': 'text/plain'}
         
-        # Send completion signal
-        final_data = {
-            'status': 'completed',
-            'results': results,
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        }
-        yield f"data: {json.dumps(final_data)}\n\n"
-    
-    return app.response_class(
-        generate_ratings(),
-        mimetype='text/event-stream',
-        headers={
-            'Cache-Control': 'no-cache',
-            'X-Accel-Buffering': 'no'
-        }
-    )
+    except concurrent.futures.TimeoutError:
+        app.logger.error(f"Timeout fetching ratings for {ticker}")
+        return jsonify({'error': 'Request timeout - some platforms may be slow'})
+    except Exception as e:
+        app.logger.error(f"Error fetching ratings for {ticker}: {str(e)}")
+        return jsonify({'error': f'An error occurred: {str(e)}'})
 
 @app.route('/get_ratings', methods=['POST'])
 def get_ratings():

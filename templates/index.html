@@ -487,34 +487,131 @@
             document.getElementById('searchBtn').disabled = true;
             document.getElementById('searchBtn').textContent = 'Fetching...';
 
-            // Initialize results display
+            // Initialize results display immediately
             initializeResultsDisplay(ticker);
 
-            // Use parallel fetching for much faster results
-            fetch('/get_ratings', {
+            // Fetch platforms in parallel but update UI as each completes
+            fetchPlatformsWithRealTimeUpdates(ticker);
+        }
+
+        async function fetchPlatformsWithRealTimeUpdates(ticker) {
+            const platforms = [
+                { name: 'zacks', func: () => fetchSinglePlatform('zacks', ticker) },
+                { name: 'tipranks', func: () => fetchSinglePlatform('tipranks', ticker) },
+                { name: 'barchart', func: () => fetchSinglePlatform('barchart', ticker) },
+                { name: 'stockopedia', func: () => fetchSinglePlatform('stockopedia', ticker) },
+                { name: 'stockstory', func: () => fetchSinglePlatform('stockstory', ticker) },
+                { name: 'marketwatch', func: () => fetchSinglePlatform('marketwatch', ticker) }
+            ];
+
+            let completed = 0;
+            const allData = { ticker: ticker };
+
+            // Start all requests in parallel
+            const promises = platforms.map(async (platform) => {
+                try {
+                    const data = await platform.func();
+                    
+                    // Update UI immediately when this platform completes
+                    allData[platform.name] = data;
+                    updatePlatformCard(platform.name, data);
+                    
+                    completed++;
+                    updateProgress(completed, platforms.length);
+                    
+                    // Update consensus if all are done
+                    if (completed === platforms.length) {
+                        allData.timestamp = new Date().toLocaleString();
+                        displayConsensus(allData);
+                        document.getElementById('timestamp').textContent = 'Updated: ' + allData.timestamp;
+                        document.getElementById('loading').style.display = 'none';
+                    }
+                    
+                    return data;
+                } catch (error) {
+                    console.error(`Error fetching ${platform.name}:`, error);
+                    const errorData = {
+                        rating: 'Error',
+                        status: 'Failed to load',
+                        success: false
+                    };
+                    allData[platform.name] = errorData;
+                    updatePlatformCard(platform.name, errorData);
+                    
+                    completed++;
+                    updateProgress(completed, platforms.length);
+                    
+                    if (completed === platforms.length) {
+                        allData.timestamp = new Date().toLocaleString();
+                        displayConsensus(allData);
+                        document.getElementById('timestamp').textContent = 'Updated: ' + allData.timestamp;
+                        document.getElementById('loading').style.display = 'none';
+                    }
+                    
+                    return errorData;
+                }
+            });
+
+            // Wait for all to complete
+            try {
+                await Promise.all(promises);
+            } catch (error) {
+                showError('Error fetching ratings: ' + error.message);
+            } finally {
+                document.getElementById('searchBtn').disabled = false;
+                document.getElementById('searchBtn').textContent = 'Get Ratings';
+            }
+        }
+
+        async function fetchSinglePlatform(platform, ticker) {
+            const response = await fetch('/get_ratings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ ticker: ticker })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    showError(data.error);
-                } else {
-                    displayResults(data);
-                }
-            })
-            .catch(error => {
-                showError('Network error: ' + error.message);
-            })
-            .finally(() => {
-                // Hide loading state
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('searchBtn').disabled = false;
-                document.getElementById('searchBtn').textContent = 'Get Ratings';
+                body: JSON.stringify({ ticker: ticker, platform: platform })
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            // Return the specific platform data
+            return data[platform] || { rating: 'N/A', status: 'No data', success: false };
+        }
+
+        function updateProgress(completed, total) {
+            document.getElementById('timestamp').textContent = 
+                `Loading... ${completed}/${total} platforms complete`;
+        }
+
+        function updatePlatformCard(platform, data) {
+            switch(platform) {
+                case 'zacks':
+                    updateRatingCard('zacks', data, data.rank ? `Rank: ${data.rank}` : '');
+                    break;
+                case 'tipranks':
+                    updateRatingCard('tipranks', data, data.score ? `Smart Score: ${data.score}/10` : '');
+                    break;
+                case 'barchart':
+                    updateRatingCard('barchart', data, 'Opinion');
+                    break;
+                case 'stockopedia':
+                    updateStockopediaCard('stockopedia', data);
+                    break;
+                case 'stockstory':
+                    updateStockStoryCard('stockstory', data);
+                    break;
+                case 'marketwatch':
+                    updateMarketWatchCard('marketwatch', data);
+                    break;
+            }
         }
 
         function initializeResultsDisplay(ticker) {
