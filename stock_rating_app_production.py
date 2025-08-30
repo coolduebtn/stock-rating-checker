@@ -541,15 +541,19 @@ def get_marketwatch_analyst_estimates(ticker):
     """Fetch MarketWatch analyst estimates including recommendation, target price, and number of ratings"""
     try:
         ticker = ticker.upper().strip()
-        url = f"https://www.marketwatch.com/investing/stock/{ticker.lower()}/analystestimates"
         
-        # Enhanced headers to avoid blocking in production
-        headers = {
+        # Try multiple approaches to avoid blocking
+        session = requests.Session()
+        
+        # First, visit the main page to get session cookies
+        main_url = "https://www.marketwatch.com/"
+        
+        # Ultra-realistic browser headers
+        main_headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
             'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate, br',
-            'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
             'Sec-Fetch-Dest': 'document',
@@ -560,28 +564,101 @@ def get_marketwatch_analyst_estimates(ticker):
             'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Windows"',
-            'Referer': 'https://www.marketwatch.com/',
+            'sec-ch-ua-full-version-list': '"Not_A Brand";v="8.0.0.0", "Chromium";v="120.0.6099.109", "Google Chrome";v="120.0.6099.109"',
+            'sec-ch-ua-arch': '"x86"',
+            'sec-ch-ua-bitness': '"64"',
+            'sec-ch-ua-model': '""',
+            'sec-ch-ua-wow64': '?0'
+        }
+        
+        # Add random delay to appear more human-like
+        time.sleep(random.uniform(2.0, 4.0))
+        
+        try:
+            # First request to establish session
+            session.get(main_url, headers=main_headers, timeout=15)
+            time.sleep(random.uniform(1.0, 3.0))
+        except:
+            pass  # Continue even if main page fails
+        
+        # Now request the analyst estimates page
+        url = f"https://www.marketwatch.com/investing/stock/{ticker.lower()}/analystestimates"
+        
+        # Enhanced headers for the actual request
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,fr;q=0.7',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
+            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-ch-ua-full-version-list': '"Not_A Brand";v="8.0.0.0", "Chromium";v="120.0.6099.109", "Google Chrome";v="120.0.6099.109"',
+            'sec-ch-ua-arch': '"x86"',
+            'sec-ch-ua-bitness': '"64"',
+            'sec-ch-ua-model': '""',
+            'sec-ch-ua-wow64': '?0',
+            'Referer': f'https://www.marketwatch.com/investing/stock/{ticker.lower()}',
             'Origin': 'https://www.marketwatch.com'
         }
         
         # Add random delay to appear more human-like
-        time.sleep(random.uniform(1.0, 2.5))
+        time.sleep(random.uniform(1.5, 3.5))
         
-        response = requests.get(url, headers=headers, timeout=20)
+        # Try with retry logic
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                response = session.get(url, headers=headers, timeout=25)
+                
+                # If we get a successful response, break out of retry loop
+                if response.status_code == 200:
+                    break
+                elif response.status_code in [401, 403] and attempt < max_retries - 1:
+                    # Wait longer and try with different approach
+                    time.sleep(random.uniform(5.0, 8.0))
+                    
+                    # Try with simpler headers on retry
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Connection': 'keep-alive'
+                    }
+                    continue
+                else:
+                    break
+                    
+            except requests.exceptions.Timeout:
+                if attempt < max_retries - 1:
+                    time.sleep(random.uniform(3.0, 6.0))
+                    continue
+                else:
+                    raise
         
         # Enhanced error code handling for production
         if response.status_code == 401:
-            return {'recommendation': 'Unauthorized', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Access unauthorized - site blocking requests', 'success': False}
+            return {'recommendation': 'Blocked (401)', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Unauthorized - try different IP/VPN', 'success': False}
         elif response.status_code == 403:
-            return {'recommendation': 'Forbidden', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Access forbidden - IP blocked', 'success': False}
+            return {'recommendation': 'Blocked (403)', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Forbidden - IP may be blacklisted', 'success': False}
         elif response.status_code == 429:
-            return {'recommendation': 'Rate Limited', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Too many requests - rate limited', 'success': False}
+            return {'recommendation': 'Rate Limited', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Too many requests - wait and retry', 'success': False}
         elif response.status_code == 404:
             return {'recommendation': 'N/A', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Stock not found', 'success': False}
         elif response.status_code == 503:
-            return {'recommendation': 'Service Unavailable', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Service temporarily unavailable', 'success': False}
+            return {'recommendation': 'Service Unavailable', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Service temporarily down', 'success': False}
+        elif response.status_code == 520:
+            return {'recommendation': 'CloudFlare Error', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'CloudFlare blocking - try VPN', 'success': False}
         elif response.status_code != 200:
-            return {'recommendation': 'N/A', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': f'HTTP {response.status_code}', 'success': False}
+            return {'recommendation': 'Error', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': f'HTTP {response.status_code} - check connection', 'success': False}
         
         soup = BeautifulSoup(response.content, 'html.parser')
         
