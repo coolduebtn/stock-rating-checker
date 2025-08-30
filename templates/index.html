@@ -161,6 +161,15 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.15);
         }
 
+        .rating-card.loading {
+            animation: pulse 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
         .platform-header {
             display: flex;
             align-items: center;
@@ -330,7 +339,8 @@
             
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <p style="margin-top: 15px; color: #666;">Fetching ratings from all platforms...</p>
+                <p style="margin-top: 15px; color: #666;">Fetching from all 6 platforms in parallel...</p>
+                <p style="margin-top: 5px; color: #999; font-size: 0.8rem;">This should take 5-10 seconds instead of 30+ seconds!</p>
             </div>
         </div>
 
@@ -477,7 +487,10 @@
             document.getElementById('searchBtn').disabled = true;
             document.getElementById('searchBtn').textContent = 'Fetching...';
 
-            // Make API call
+            // Initialize results display
+            initializeResultsDisplay(ticker);
+
+            // Use parallel fetching for much faster results
             fetch('/get_ratings', {
                 method: 'POST',
                 headers: {
@@ -502,6 +515,29 @@
                 document.getElementById('searchBtn').disabled = false;
                 document.getElementById('searchBtn').textContent = 'Get Ratings';
             });
+        }
+
+        function initializeResultsDisplay(ticker) {
+            // Show results section early with loading indicators
+            document.getElementById('tickerSymbol').textContent = ticker;
+            document.getElementById('timestamp').textContent = 'Fetching data...';
+            updatePlatformLinks(ticker);
+            
+            // Show all cards with loading state
+            const platforms = ['zacks', 'tipranks', 'barchart', 'stockopedia', 'stockstory', 'marketwatch'];
+            platforms.forEach(platform => {
+                const ratingElement = document.getElementById(platform + 'Rating');
+                const statusElement = document.getElementById(platform + 'Status');
+                
+                ratingElement.textContent = '⏳';
+                ratingElement.className = 'rating-value';
+                statusElement.textContent = 'Loading...';
+                statusElement.className = 'rating-description status-warning';
+            });
+            
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
         }
 
         function displayResults(data) {

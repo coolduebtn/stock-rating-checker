@@ -940,6 +940,109 @@ def health_check():
         'version': os.getenv('APP_VERSION', '1.0.0')
     })
 
+import concurrent.futures
+import threading
+
+@app.route('/get_ratings_stream', methods=['POST'])
+def get_ratings_stream():
+    """Stream ratings as they become available for better UX"""
+    if limiter:
+        limiter.limit("10 per minute")(lambda: None)()
+    
+    ticker = request.json.get('ticker', '').strip().upper()
+    
+    if not ticker:
+        return jsonify({'error': 'Please enter a ticker symbol'})
+    
+    if not re.match(r'^[A-Z]{1,5}(\.[A-Z]{1,2})?$', ticker):
+        return jsonify({'error': 'Invalid ticker symbol format'})
+    
+    def generate_ratings():
+        # Send initial response
+        initial_data = {
+            'ticker': ticker,
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'status': 'started'
+        }
+        yield f"data: {json.dumps(initial_data)}\n\n"
+        
+        # Shared results dictionary with thread-safe access
+        results = {}
+        results_lock = threading.Lock()
+        
+        def fetch_platform_rating(platform_name, fetch_function):
+            try:
+                result = fetch_function(ticker)
+                with results_lock:
+                    results[platform_name] = result
+                
+                # Send update
+                update_data = {
+                    'platform': platform_name,
+                    'data': result,
+                    'completed': len(results),
+                    'total': 6
+                }
+                return f"data: {json.dumps(update_data)}\n\n"
+            except Exception as e:
+                error_result = {
+                    'rating': 'Error',
+                    'status': f'Error: {str(e)[:50]}',
+                    'success': False
+                }
+                with results_lock:
+                    results[platform_name] = error_result
+                
+                update_data = {
+                    'platform': platform_name,
+                    'data': error_result,
+                    'completed': len(results),
+                    'total': 6
+                }
+                return f"data: {json.dumps(update_data)}\n\n"
+        
+        # Use ThreadPoolExecutor for parallel execution
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+            platform_functions = {
+                'zacks': get_zacks_rating,
+                'tipranks': get_tipranks_rating,
+                'barchart': get_barchart_rating,
+                'stockopedia': get_stockopedia_rating,
+                'stockstory': get_stockstory_rating,
+                'marketwatch': get_marketwatch_analyst_estimates
+            }
+            
+            # Submit all tasks
+            future_to_platform = {
+                executor.submit(fetch_platform_rating, platform, func): platform
+                for platform, func in platform_functions.items()
+            }
+            
+            # Yield results as they complete
+            for future in concurrent.futures.as_completed(future_to_platform, timeout=45):
+                try:
+                    result_data = future.result()
+                    yield result_data
+                except Exception as e:
+                    app.logger.error(f"Error in streaming: {str(e)}")
+        
+        # Send completion signal
+        final_data = {
+            'status': 'completed',
+            'results': results,
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        yield f"data: {json.dumps(final_data)}\n\n"
+    
+    return app.response_class(
+        generate_ratings(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no'
+        }
+    )
+
 @app.route('/get_ratings', methods=['POST'])
 def get_ratings():
     if limiter:
@@ -968,38 +1071,38 @@ def get_ratings():
     }
     
     try:
-        # Fetch Zacks rating
-        app.logger.info(f"Fetching Zacks rating for {ticker}")
-        zacks_result = get_zacks_rating(ticker)
-        results['zacks'] = zacks_result
-        
-        # Fetch TipRanks rating
-        app.logger.info(f"Fetching TipRanks rating for {ticker}")
-        tipranks_result = get_tipranks_rating(ticker)
-        results['tipranks'] = tipranks_result
-        
-        # Fetch Barchart rating
-        app.logger.info(f"Fetching Barchart rating for {ticker}")
-        barchart_result = get_barchart_rating(ticker)
-        results['barchart'] = barchart_result
-        
-        # Fetch Stockopedia rating
-        app.logger.info(f"Fetching Stockopedia rating for {ticker}")
-        stockopedia_result = get_stockopedia_rating(ticker)
-        results['stockopedia'] = stockopedia_result
-        
-        # Fetch StockStory rating
-        app.logger.info(f"Fetching StockStory rating for {ticker}")
-        stockstory_result = get_stockstory_rating(ticker)
-        results['stockstory'] = stockstory_result
-        
-        # Fetch MarketWatch analyst estimates
-        app.logger.info(f"Fetching MarketWatch analyst estimates for {ticker}")
-        marketwatch_result = get_marketwatch_analyst_estimates(ticker)
-        results['marketwatch'] = marketwatch_result
+        # Use ThreadPoolExecutor for parallel execution
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+            # Submit all tasks simultaneously
+            future_to_platform = {
+                executor.submit(get_zacks_rating, ticker): 'zacks',
+                executor.submit(get_tipranks_rating, ticker): 'tipranks',
+                executor.submit(get_barchart_rating, ticker): 'barchart',
+                executor.submit(get_stockopedia_rating, ticker): 'stockopedia',
+                executor.submit(get_stockstory_rating, ticker): 'stockstory',
+                executor.submit(get_marketwatch_analyst_estimates, ticker): 'marketwatch'
+            }
+            
+            # Collect results as they complete
+            for future in concurrent.futures.as_completed(future_to_platform, timeout=45):
+                platform = future_to_platform[future]
+                try:
+                    result = future.result()
+                    results[platform] = result
+                    app.logger.info(f"Completed {platform} for {ticker}")
+                except Exception as e:
+                    app.logger.error(f"Error fetching {platform} for {ticker}: {str(e)}")
+                    results[platform] = {
+                        'rating': 'Error',
+                        'status': f'Error: {str(e)[:50]}',
+                        'success': False
+                    }
         
         return jsonify(results)
     
+    except concurrent.futures.TimeoutError:
+        app.logger.error(f"Timeout fetching ratings for {ticker}")
+        return jsonify({'error': 'Request timeout - some platforms may be slow'})
     except Exception as e:
         app.logger.error(f"Error fetching ratings for {ticker}: {str(e)}")
         return jsonify({'error': f'An error occurred: {str(e)}'})
