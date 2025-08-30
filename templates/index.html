@@ -184,6 +184,7 @@
         .tipranks-logo { background: linear-gradient(135deg, #3498db, #2980b9); }
         .barchart-logo { background: linear-gradient(135deg, #f39c12, #e67e22); }
         .stockopedia-logo { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .stockstory-logo { background: linear-gradient(135deg, #16a085, #1abc9c); }
 
         .platform-name {
             font-size: 1.4rem;
@@ -291,7 +292,7 @@
     <div class="container">
         <div class="header">
             <h1>📈 Stock Rating Checker</h1>
-            <p>Get real-time ratings from Zacks, TipRanks, Barchart, and Stockopedia</p>
+            <p>Get real-time ratings from Zacks, TipRanks, Barchart, Stockopedia, and StockStory</p>
         </div>
 
         <div class="search-section">
@@ -363,6 +364,19 @@
                         <div class="rating-value" id="stockopediaRating">-</div>
                         <div class="rating-score" id="stockopediaScore">StockRank: -/100</div>
                         <div class="rating-description" id="stockopediaStatus">-</div>
+                    </div>
+                </div>
+
+                <!-- StockStory Card -->
+                <div class="rating-card">
+                    <div class="platform-header">
+                        <div class="platform-logo stockstory-logo">SS</div>
+                        <div class="platform-name">StockStory</div>
+                    </div>
+                    <div class="rating-display">
+                        <div class="rating-value" id="stockstoryRating">-</div>
+                        <div class="rating-score" id="stockstorySentiment">Sentiment: -</div>
+                        <div class="rating-description" id="stockstoryStatus">-</div>
                     </div>
                 </div>
             </div>
@@ -444,6 +458,9 @@
             // Update Stockopedia
             updateStockopediaCard('stockopedia', data.stockopedia);
 
+            // Update StockStory
+            updateStockStoryCard('stockstory', data.stockstory);
+
             // Calculate and display consensus
             displayConsensus(data);
 
@@ -506,6 +523,43 @@
             }
         }
 
+        function updateStockStoryCard(platform, data) {
+            const ratingElement = document.getElementById(platform + 'Rating');
+            const sentimentElement = document.getElementById(platform + 'Sentiment');
+            const statusElement = document.getElementById(platform + 'Status');
+
+            const rating = data.rating || 'N/A';
+            const sentiment = data.sentiment || 'Unknown';
+            
+            ratingElement.textContent = rating;
+            sentimentElement.textContent = `Sentiment: ${sentiment}`;
+            statusElement.textContent = data.status || 'Unknown';
+
+            // Remove existing rating classes
+            ratingElement.className = 'rating-value';
+            
+            // Add appropriate class based on sentiment
+            if (sentiment === 'Very Positive') {
+                ratingElement.classList.add('rating-strong-buy');
+            } else if (sentiment === 'Positive') {
+                ratingElement.classList.add('rating-buy');
+            } else if (sentiment === 'Neutral') {
+                ratingElement.classList.add('rating-hold');
+            } else if (sentiment === 'Negative') {
+                ratingElement.classList.add('rating-sell');
+            } else if (sentiment === 'Risky') {
+                ratingElement.classList.add('rating-underperform');
+            }
+
+            // Set status color
+            statusElement.className = 'rating-description';
+            if (data.success) {
+                statusElement.classList.add('status-success');
+            } else {
+                statusElement.classList.add('status-error');
+            }
+        }
+
         function displayConsensus(data) {
             const consensusElement = document.getElementById('consensusResult');
             const descriptionElement = document.getElementById('consensusDescription');
@@ -550,6 +604,20 @@
                 if (stockopediaCategory.includes('excellent') || stockopediaCategory.includes('good')) positive++;
                 else if (stockopediaCategory.includes('poor')) negative++;
                 else neutral++;
+            }
+
+            // Analyze StockStory
+            if (data.stockstory.success) {
+                total++;
+                const stockstoryRating = data.stockstory.rating.toLowerCase();
+                if (stockstoryRating.includes('high quality') || stockstoryRating.includes('timely buy') || 
+                    stockstoryRating.includes('outperform') || stockstoryRating.includes('good value')) {
+                    positive++;
+                } else if (stockstoryRating.includes('underperform')) {
+                    negative++;
+                } else {
+                    neutral++;
+                }
             }
 
             // Determine consensus

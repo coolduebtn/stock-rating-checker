@@ -460,6 +460,147 @@ def get_stockopedia_rating(ticker):
     except Exception as e:
         return {'stockrank': 'Error', 'style': 'Error', 'status': str(e)[:50], 'success': False}
 
+def get_stockstory_rating(ticker):
+    """Fetch StockStory rating with multi-exchange support"""
+    try:
+        import json
+        
+        ticker = ticker.upper().strip()
+        
+        # Try multiple exchanges - NASDAQ first, then NYSE
+        exchanges = ['nasdaq', 'nyse']
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1'
+        }
+        
+        response = None
+        successful_url = None
+        
+        # Try each exchange until we find the stock
+        for exchange in exchanges:
+            url = f"https://stockstory.org/us/stocks/{exchange}/{ticker.lower()}"
+            
+            # Add random delay
+            time.sleep(random.uniform(0.5, 1.5))
+            
+            try:
+                test_response = requests.get(url, headers=headers, timeout=15)
+                
+                if test_response.status_code == 200:
+                    response = test_response
+                    successful_url = url
+                    break
+                elif test_response.status_code == 404:
+                    continue  # Try next exchange
+                else:
+                    continue
+                    
+            except requests.exceptions.RequestException:
+                continue  # Try next exchange
+        
+        # If no successful response from any exchange
+        if response is None:
+            return {'rating': 'N/A', 'sentiment': 'N/A', 'status': 'Stock not found', 'success': False}
+        
+        # Extract StockStory company tags and ratings
+        tag_matches = re.findall(r'aria-label="Company tag: ([^"]+)"', response.text)
+        rating_matches = re.findall(r'aria-label="Company rating: ([^"]+)"', response.text)
+        
+        unique_tags = list(set(tag_matches))
+        unique_ratings = list(set(rating_matches))
+        
+        sentiment = 'Unknown'
+        rating_text = 'N/A'
+        
+        # Prioritize company ratings first
+        if unique_ratings:
+            rating_sentiment_map = {
+                'Underperform': 'Negative',
+                'Outperform': 'Positive', 
+                'Investable': 'Neutral',
+                'Speculative': 'Risky',
+                'Avoid': 'Negative'
+            }
+            
+            primary_rating = unique_ratings[0]
+            rating_text = primary_rating
+            sentiment = rating_sentiment_map.get(primary_rating, 'Neutral')
+            
+            # If we have both rating and positive tags, combine them
+            if sentiment in ['Neutral', 'Positive'] and unique_tags:
+                positive_tags = [tag for tag in unique_tags if tag in ['High Quality', 'Timely Buy', 'Good Value', 'Strong Growth']]
+                if positive_tags:
+                    rating_text = f"{primary_rating} + {', '.join(positive_tags)}"
+                    if sentiment == 'Neutral':
+                        sentiment = 'Positive'
+        
+        elif unique_tags:
+            # If no explicit company ratings, use tags
+            if 'High Quality' in unique_tags and 'Timely Buy' in unique_tags:
+                rating_text = 'High Quality & Timely Buy'
+                sentiment = 'Very Positive'
+            elif 'Timely Buy' in unique_tags:
+                rating_text = 'Timely Buy'
+                sentiment = 'Positive'
+            elif 'High Quality' in unique_tags:
+                rating_text = 'High Quality'
+                sentiment = 'Positive'
+            elif 'Good Value' in unique_tags:
+                rating_text = 'Good Value'
+                sentiment = 'Positive'
+            elif 'Strong Growth' in unique_tags:
+                rating_text = 'Strong Growth'
+                sentiment = 'Positive'
+            else:
+                rating_text = ', '.join(unique_tags[:2])
+                sentiment = 'Neutral'
+        
+        # If no ratings or tags found, check JSON-LD structured data
+        if sentiment == 'Unknown':
+            json_ld_pattern = r'<script type="application/ld\+json">(.*?)</script>'
+            json_matches = re.findall(json_ld_pattern, response.text, re.DOTALL)
+            
+            for json_text in json_matches:
+                try:
+                    data = json.loads(json_text)
+                    if isinstance(data, dict) and 'description' in data:
+                        desc = data['description']
+                        
+                        if 'We like' in desc:
+                            sentiment = 'Positive'
+                            rating_text = 'Like'
+                        elif 'We love' in desc:
+                            sentiment = 'Very Positive'
+                            rating_text = 'Love'
+                        elif "We're not sold" in desc or 'not sold' in desc:
+                            sentiment = 'Negative'
+                            rating_text = 'Not Sold'
+                        elif 'outstanding' in desc.lower():
+                            sentiment = 'Positive'
+                            rating_text = 'Outstanding'
+                        
+                        if sentiment != 'Unknown':
+                            break
+                            
+                except json.JSONDecodeError:
+                    continue
+        
+        return {
+            'rating': rating_text,
+            'sentiment': sentiment,
+            'exchange': successful_url.split('/')[-2].upper() if successful_url else 'Unknown',
+            'status': 'Found' if sentiment != 'Unknown' else 'No clear rating found',
+            'success': sentiment != 'Unknown'
+        }
+        
+    except Exception as e:
+        return {'rating': 'Error', 'sentiment': 'Error', 'status': str(e)[:50], 'success': False}
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -478,7 +619,8 @@ def get_ratings():
         'zacks': {'status': 'Fetching...'},
         'tipranks': {'status': 'Fetching...'},
         'barchart': {'status': 'Fetching...'},
-        'stockopedia': {'status': 'Fetching...'}
+        'stockopedia': {'status': 'Fetching...'},
+        'stockstory': {'status': 'Fetching...'}
     }
     
     try:
@@ -501,6 +643,11 @@ def get_ratings():
         print(f"Fetching Stockopedia rating for {ticker}...")
         stockopedia_result = get_stockopedia_rating(ticker)
         results['stockopedia'] = stockopedia_result
+        
+        # Fetch StockStory rating
+        print(f"Fetching StockStory rating for {ticker}...")
+        stockstory_result = get_stockstory_rating(ticker)
+        results['stockstory'] = stockstory_result
         
         return jsonify(results)
     
