@@ -1,0 +1,168 @@
+﻿Rank;Symbol;Company Name;Price;Change %;Quant Rating;SA Analyst Ratings;Wall Street Ratings;Valuation;Growth;Profitability;Momentum;EPS Rev.
+1;MU;Micron Technology, Inc.;253,3;6,46%;4,99;4,04;4,41;C+;A+;A+;A+;A
+2;LITE;Lumentum Holdings Inc.;259,89;8,24%;4,99;4,33;4,30;D;A+;C-;A+;A
+3;IMPP;Imperial Petroleum Inc.;5,92;10,04%;4,99;4,00;4,00;A+;B-;A+;A+;A+
+4;APLD;Applied Digital Corporation;31,44;1,48%;4,99;4,00;4,70;C;A+;D;A+;C+
+5;HUT;Hut 8 Corp.;47,17;5,79%;4,98;3,50;4,66;B-;B;A+;A+;A-
+6;COMM;CommScope Holding Company, Inc.;16,79;0,84%;4,98;4,00;4,25;A-;C+;A;A+;A-
+7;ITRG;Integra Resources Corp.;3,11;12,68%;4,97;4,33;4,16;C-;A+;C-;A+;A-
+8;CYD;China Yuchai International Limited;40;0,33%;4,97;4,00;4,00;B+;A;D+;A+;A+
+9;EGAN;eGain Corporation;15,175;5,24%;4,97;4,00;4,00;C+;C;B;A+;A+
+10;CTMX;CytomX Therapeutics, Inc.;4,19;15,75%;4,96;4,00;4,37;C;A;B;A+;B
+11;HHH;Howard Hughes Holdings Inc.;89,14;11,30%;4,96;4,00;4,25;C+;A+;B+;A;A
+12;IAG;IAMGOLD Corporation;13,3;4,89%;4,96;4,00;4,00;B-;A+;C-;A;A
+13;DFDV;DeFi Development Corp.;8,42;0,96%;4,95;3,50;5,00;C+;A+;B;A+;A
+14;TSM;Taiwan Semiconductor Manufacturing Company Limited;295,27;3,06%;4,95;4,06;4,47;D+;A-;A+;B+;A+
+15;AUGO;Aura Minerals Inc.;35,89;4,67%;4,95;4,00;4,62;C+;A+;A-;A;A+
+16;GH;Guardant Health, Inc.;97,92;1,24%;4,95;3,66;4,65;B-;C+;C+;A+;B+
+17;BAC;Bank of America Corporation;53,42;0,41%;4,95;3,50;4,36;D+;B;A+;A-;B
+18;SSRM;SSR Mining Inc.;20,82;4,41%;4,95;3,75;3,50;A-;A+;B-;A+;B+
+19;NEM;Newmont Corporation;88,26;5,84%;4,94;4,09;4,28;B-;A-;A+;B+;A
+20;TTMI;TTM Technologies, Inc.;69,89;4,75%;4,94;4,00;4,75;C;B-;C-;A+;B+
+21;BRK.A;Berkshire Hathaway Inc.;744500,1;-0,51%;4,94;3,84;3,50;D+;C-;A+;B-;A
+22;DB;Deutsche Bank Aktiengesellschaft;37,83;3,70%;4,93;4,00;5,00;A-;A+;A+;A+;A+
+23;INCY;Incyte Corporation;105,98;0,00%;4,93;4,33;3,61;A-;A+;A+;A-;A
+24;AU;AngloGold Ashanti plc;74,1;6,76%;4,93;4,00;4,00;C;A;A+;A;A
+25;BKTI;BK Technologies Corporation;76,2;1,13%;4,93;3,50;5,00;C+;C+;A;A+;A
+26;GM;General Motors Company;71,05;0,42%;4,92;3,50;3,92;B-;C+;A+;A;A-
+27;AXIA;Centrais Elétricas Brasileiras S.A. - Eletrobrás;11,16;1,18%;4,92;4,00;5,00;A+;A+;B;A+;A
+28;BDTX;Black Diamond Therapeutics, Inc.;4,36;12,08%;4,92;4,00;4,75;B+;C+;A+;A;A-
+29;GRAL;GRAIL, Inc.;85,11;7,19%;4,92;3,66;3,50;B;C;D+;A+;B-
+30;KGC;Kinross Gold Corporation;25,44;4,56%;4,92;4,25;4,11;C-;A-;A+;A-;A+
+31;PTCT;PTC Therapeutics, Inc.;72,48;0,98%;4,91;3,50;3,93;A-;B;A+;A-;A-
+32;GLXY;Galaxy Digital Inc.;31,79;0,73%;4,91;3,50;4,50;B-;A+;A;A+;A+
+33;AXIAPR;Centrais Elétricas Brasileiras S.A. - Eletrobrás;8,83;1,38%;4,91;4,00;5,00;A+;A+;B;A+;A+
+34;ZBIO;Zenas BioPharma, Inc.;32,47;-3,39%;4,91;4,00;4,71;D;B;C-;A+;B
+35;QURE;uniQure N.V.;26,15;-5,90%;4,90;4,00;4,50;B-;B;C+;A+;B
+36;TM;Toyota Motor Corporation;203,94;0,97%;4,90;3,75;3,66;B+;C-;A+;B+;A
+37;NXT;Nextracker Inc.;107,43;2,68%;4,90;3,66;4,21;D+;C-;A;A+;B
+38;DRD;DRDGOLD Limited;27,11;3,71%;4,90;3,50;4,00;D+;B-;A-;A+;A+
+39;AREN;The Arena Group Holdings, Inc.;4,87;2,74%;4,90;4,00;5,00;B-;A;B-;A+;A+
+40;IRS;IRSA Inversiones y Representaciones Sociedad Anónima;15,05;0,40%;4,90;4,00;4,50;A+;A+;A+;B+;C-
+41;PFE;Pfizer Inc.;24,39;-0,16%;4,89;3,70;3,52;A-;A;A+;C;B+
+42;ATRO;Astronics Corporation;47,83;1,81%;4,89;4,00;4,66;C-;A-;C-;A+;A+
+43;PRE;Prenetics Global Limited;11,89;-3,65%;4,89;4,00;5,00;A-;A-;D+;A+;A-
+44;HRTG;Heritage Insurance Holdings, Inc.;28,91;-2,13%;4,89;4,00;4,00;A-;B+;B;A+;A-
+45;KB;KB Financial Group Inc.;88,32;4,61%;4,88;4,00;5,00;B+;B+;A+;A;B+
+46;ALL;The Allstate Corporation;203,89;0,79%;4,88;3,66;4,13;B-;A+;A;C+;A
+47;B;Barrick Mining Corporation;34,8;5,17%;4,88;3,57;4,13;C+;A-;A+;A-;B+
+48;THG;The Hanover Insurance Group, Inc.;181,5;1,08%;4,87;4,00;4,00;B+;A+;B+;B+;A-
+49;ESEA;Euroseas Ltd.;58,83;1,59%;4,87;4,00;4,66;A+;C;D;A;A-
+50;GTX;Garrett Motion Inc.;17,51;-0,23%;4,87;4,00;4,00;C+;A-;A;A+;A-
+51;UBER;Uber Technologies, Inc.;94,1;2,29%;4,87;3,86;4,43;C+;A;A+;B;A-
+52;MRP;Millrose Properties, Inc.;31,67;-0,50%;4,86;3,50;4,75;A-;C-;C-;A;A+
+53;OUST;Ouster, Inc.;25,67;-0,16%;4,86;3,71;4,66;D;B-;D;A;A
+54;BBVA;Banco Bilbao Vizcaya Argentaria, S.A.;21,1;3,33%;4,85;4,00;4,00;C;A-;A-;A+;B+
+55;KT;KT Corporation;18,1;-0,60%;4,85;4,00;4,50;A;A+;B;B-;A+
+56;ARQT;Arcutis Biotherapeutics, Inc.;23,75;-1,98%;4,84;4,00;4,37;D;A-;B;A;A+
+57;SMFG;Sumitomo Mitsui Financial Group, Inc.;16,47;1,04%;4,84;4,00;5,00;C;A+;A+;B+;A
+58;GNW;Genworth Financial, Inc.;8,63;-0,46%;4,84;4,00;4,00;A;A;B;A-;B+
+59;UVE;Universal Insurance Holdings, Inc.;34,58;2,89%;4,83;3,50;4,00;B-;C+;B;A+;B
+60;KBCSY;KBC Group NV;62,3325;2,72%;4,83;4,00;5,00;C+;A-;A+;A+;B+
+61;CSTM;Constellium SE;16,22;2,46%;4,83;4,00;4,25;A-;A;C+;B;A
+62;OHI;Omega Healthcare Investors, Inc.;43,92;0,87%;4,83;4,00;3,82;B-;C;A;A;A+
+63;TVTX;Travere Therapeutics, Inc.;34,38;6,31%;4,83;4,00;4,64;D;B+;C+;A;A+
+64;PUK;Prudential plc;28,74;0,63%;4,82;3,50;4,66;D+;A+;B+;A+;A+
+65;BRK.B;Berkshire Hathaway Inc.;496,98;-0,42%;4,82;3,84;4,25;D+;C-;A+;B-;C+
+66;HBM;Hudbay Minerals Inc.;16,86;4,53%;4,82;3,50;4,56;C+;A;A;A;B+
+67;HNHPF;Hon Hai Precision Industry Co., Ltd.;16,13;4,06%;4,82;4,00;4,00;B+;C+;A-;B+;A-
+68;OMF;OneMain Holdings, Inc.;59,95;1,35%;4,82;4,33;4,12;A;A-;B+;B+;B
+69;IBDSF;Iberdrola, S.A.;20,57;-0,10%;4,82;4,00;5,00;C;B;A+;A-;A+
+70;IBDRY;Iberdrola, S.A.;81,7;-0,10%;4,81;4,00;4,00;C;B+;A+;A-;A
+71;DGICA;Donegal Group Inc.;19,45;1,09%;4,81;4,00;4,00;B+;A+;B-;A-;A-
+72;MRK;Merck & Co., Inc.;86,75;0,54%;4,81;4,33;3,96;B;A;A+;C+;B+
+73;RCUS;Arcus Biosciences, Inc.;19,46;0,78%;4,81;4,00;4,45;D+;C-;C-;A;A
+74;HCI;HCI Group, Inc.;188,6;3,97%;4,81;4,00;4,80;C-;B+;A+;A+;A
+75;WLDN;Willdan Group, Inc.;94,17;3,55%;4,80;3,83;5,00;C-;A;B-;A+;A
+76;OPRX;OptimizeRx Corporation;16,51;5,50%;4,80;4,00;4,57;D+;A;A-;A;A
+77;VIAV;Viavi Solutions Inc.;18,16;1,97%;4,80;4,00;4,62;D;B;B-;A;A
+78;CENX;Century Aluminum Company;32,31;-2,24%;4,80;4,00;5,00;D+;A;C+;B+;A-
+79;AUPH;Aurinia Pharmaceuticals Inc.;14,89;1,92%;4,79;4,00;4,50;C;A;A+;A;A+
+80;PROSY;Prosus N.V.;14,3634;4,31%;4,79;4,50;5,00;C-;A;A-;A+;A
+81;AER;AerCap Holdings N.V.;136,27;2,50%;4,79;4,00;4,50;B+;B-;A+;A-;A+
+82;BTE;Baytex Energy Corp.;2,59;2,78%;4,79;4,50;3,54;B+;C;B-;B+;A
+83;NHYDY;Norsk Hydro ASA ADR;7,125;2,81%;4,78;4,00;5,00;A-;A;A;B-;A+
+84;MPAA;Motorcar Parts of America, Inc.;12,86;-26,01%;4,78;3,50;5,00;B;B-;C+;A+;A-
+85;GLNCY;Glencore plc;9,59;1,37%;4,77;3,50;4,00;B-;B;A;B-;A
+86;CSTL;Castle Biosciences, Inc.;34,74;5,15%;4,77;4,00;5,00;C+;B-;B+;A-;B+
+87;TIGR;UP Fintech Holding Limited;10,62;3,51%;4,76;4,00;4,45;B+;A+;C+;A;A
+88;APPS;Digital Turbine, Inc.;5,92;-1,17%;4,76;4,00;4,00;B-;A;D+;A;B+
+89;GCT;GigaCloud Technology Inc.;33,77;1,99%;4,76;4,00;4,25;B-;C;B+;A+;A+
+90;ENVA;Enova International, Inc.;127,06;1,76%;4,76;4,50;4,50;A-;B+;B-;A;A
+91;FSI;Flexible Solutions International, Inc.;8,48;2,17%;4,76;5,00;5,00;C-;B+;C;A-;A+
+92;PBR;Petróleo Brasileiro S.A. - Petrobras;13,01;1,17%;4,75;3,66;4,21;A;C;A+;C;B
+93;AEM;Agnico Eagle Mines Limited;167,92;4,03%;4,75;4,00;4,20;D+;A-;A+;B+;A-
+94;SYF;Synchrony Financial;74,7;2,06%;4,75;3,66;4,13;B-;B;A+;A-;B
+95;ECO;Okeanis Eco Tankers Corp.;34,13;1,82%;4,74;4,00;4,66;C;C+;A-;A;A
+96;AMRC;Ameresco, Inc.;35,91;1,81%;4,74;4,00;4,16;B;A;D;A+;B+
+97;APTV;Aptiv PLC;82,56;-1,31%;4,73;4,00;4,09;C;C+;B+;A-;A-
+98;EQX;Equinox Gold Corp.;12,21;4,27%;4,73;4,50;4,60;C-;A+;B;A;C
+99;CCL;Carnival Corporation & plc;26,89;0,60%;4,73;3,87;4,32;C+;A-;A;B;A+
+100;NHI;National Health Investors, Inc.;76,72;-0,10%;4,73;4,00;4,50;C;C-;A;B;A+
+101;CTM;Castellum, Inc.;1,22;1,67%;4,73;4,00;4,00;B-;A+;D+;A-;B+
+102;ALLY;Ally Financial Inc.;39,27;0,00%;4,73;4,50;4,00;A-;A+;B+;B;B-
+103;MRCY;Mercury Systems, Inc.;74,65;0,78%;4,72;3,50;4,00;C-;A+;B-;A;B+
+104;SBS;Companhia de Saneamento Básico do Estado de São Paulo - SABESP;25,69;0,00%;4,71;4,00;4,80;B-;A-;A-;A;A+
+105;GSL;Global Ship Lease, Inc.;34,66;9,41%;4,71;4,25;4,33;A+;C-;A+;A;B
+106;GILD;Gilead Sciences, Inc.;118,15;-0,58%;4,70;4,00;4,28;C+;B-;A+;B-;B+
+107;VEON;VEON Ltd.;50;14,77%;4,70;4,00;5,00;A;B;A-;B;A-
+108;HIG;The Hartford Insurance Group, Inc.;130,86;1,12%;4,70;4,00;3,76;D+;C+;A;B;B+
+109;HST;Host Hotels & Resorts, Inc.;18,18;1,91%;4,70;3,60;4,15;B-;A-;B;A;A
+110;EVER;EverQuote, Inc.;26,45;4,01%;4,69;4,00;4,00;D+;A+;B+;B+;A
+111;ECG;Everus Construction Group, Inc.;100,85;3,11%;4,69;4,00;4,00;C-;B;B-;A;A+
+112;HTHT;H World Group Limited;44,61;8,62%;4,69;3,50;4,62;C-;C;A-;A-;A+
+113;ATI;ATI Inc.;98,1;0,46%;4,68;3,66;4,44;C-;A;B;A;A
+114;NTCT;NetScout Systems, Inc.;29,265;1,93%;4,67;4,00;3,66;A-;C-;B+;B;A
+115;SFST;Southern First Bancshares, Inc.;47,7;2,32%;4,67;4,00;3,50;C+;A;D;A;B+
+116;PRIM;Primoris Services Corporation;128,99;2,82%;4,67;4,00;4,36;D;A-;B-;A;A
+117;NOAH;Noah Holdings Limited;11,31;1,71%;4,66;4,00;3,60;A+;A;B;C+;C
+118;AQST;Aquestive Therapeutics, Inc.;5,58;-7,62%;4,65;3,66;4,66;B-;B;D;A-;A
+119;DELL;Dell Technologies Inc.;142,69;-2,73%;4,65;4,23;4,32;B-;B-;A+;B-;B-
+120;CGAU;Centerra Gold Inc.;12,04;5,52%;4,65;4,50;3,50;B;A;A-;A-;B
+121;RIOT;Riot Platforms, Inc.;17,32;1,82%;4,64;3,66;4,76;B;A;C+;A-;C+
+122;NBIX;Neurocrine Biosciences, Inc.;150,02;-1,54%;4,63;4,00;4,55;C-;B+;A;B;A+
+123;PINE;Alpine Income Property Trust, Inc.;15,61;1,56%;4,63;4,66;4,45;A-;A;B-;B;A-
+124;AA;Alcoa Corporation;38,79;3,94%;4,62;3,50;4,07;A-;A;A-;B-;B+
+125;PSX;Phillips 66;138,65;0,51%;4,62;4,00;3,76;D;B+;B;B;A-
+126;FNB;F.N.B. Corporation;16,19;0,68%;4,62;4,00;4,71;B;C;C+;B;B
+127;PAAS;Pan American Silver Corp.;37,4;7,44%;4,62;4,00;4,00;C;A+;A;B;B+
+128;ILMN;Illumina, Inc.;121,72;-0,15%;4,62;4,00;3,55;C-;A;A;B;A+
+129;GD;General Dynamics Corporation;349,49;0,91%;4,61;4,00;3,90;C-;C;A+;B+;B+
+130;III;Information Services Group, Inc.;5,2;-0,95%;4,61;3,50;4,50;B+;A-;B-;B;A+
+131;ZH;Zhihu Inc.;4,23;1,93%;4,60;4,00;4,50;A-;C+;D+;B-;A+
+132;DBD;Diebold Nixdorf, Incorporated;65;0,78%;4,60;4,00;4,66;B+;C;C+;B;A+
+133;XERS;Xeris Biopharma Holdings, Inc.;7,72;3,90%;4,60;3,50;4,60;C+;B;B+;A;B
+134;RERE;ATRenew Inc.;4,03;2,03%;4,60;4,00;5,00;B-;C;C;A;A-
+135;PSTL;Postal Realty Trust, Inc.;15,59;0,06%;4,60;4,00;4,00;B;A;B-;A-;B+
+136;DAL;Delta Air Lines, Inc.;58,56;-0,54%;4,59;4,00;4,63;B+;C+;A+;C+;A-
+137;VRTX;Vertex Pharmaceuticals Incorporated;421,2;2,86%;4,59;4,00;4,03;B+;A+;A+;C;B
+138;KNOP;KNOT Offshore Partners LP Common Units;9,87;0,41%;4,59;4,00;3,66;B-;B-;A+;A;B+
+139;RF;Regions Financial Corporation;25,04;0,76%;4,59;4,00;3,68;B-;C-;B+;B-;C+
+140;TMP;Tompkins Financial Corporation;67,55;1,30%;4,58;4,00;4,00;B-;A+;D+;B-;A-
+141;TATT;TAT Technologies Ltd.;39,99;2,75%;4,58;5,00;5,00;C;A+;D+;A-;A-
+142;LHX;L3Harris Technologies, Inc.;297;2,18%;4,58;4,00;4,35;D+;C-;A-;B+;A-
+143;BPOP;Popular, Inc.;115,44;0,79%;4,57;4,00;4,22;C;B+;C+;B+;A
+144;BKV;BKV Corporation;25,62;0,91%;4,57;4,00;5,00;D;B;C-;B+;A
+145;VCYT;Veracyte, Inc.;42,35;1,56%;4,57;4,00;4,25;C-;C-;A-;B+;A+
+146;FAF;First American Financial Corporation;63,05;1,09%;4,56;4,00;4,25;C+;A;B;C+;A+
+147;XHR;Xenia Hotels & Resorts, Inc.;13,82;1,69%;4,56;4,00;4,33;B;A-;B-;B;A
+148;NWPX;NWPX Infrastructure, Inc.;58,98;0,05%;4,56;4,00;4,00;B;C;C+;B+;A+
+149;WK;Workiva Inc.;89,15;0,17%;4,56;4,00;4,81;C+;A;C+;B-;B+
+150;HMN;Horace Mann Educators Corporation;45,62;0,62%;4,55;4,00;4,00;B;B+;C+;B;B+
+151;NRIM;Northrim BanCorp, Inc.;23,05;0,83%;4,55;4,00;5,00;B;A-;C;B+;A-
+152;TAL;TAL Education Group;11,84;0,85%;4,54;4,00;4,42;C-;A;B;B-;A+
+153;THFF;First Financial Corporation;56,94;1,46%;4,54;4,00;3,66;B;C+;D+;B+;A-
+154;AMX;América Móvil, S.A.B. de C.V.;23,14;-0,56%;4,53;4,00;4,00;C-;A-;A+;A;B
+155;LCII;LCI Industries;109,84;1,06%;4,53;4,00;3,70;B-;B;C+;B+;A+
+156;ADI;Analog Devices, Inc.;232;1,54%;4,53;4,00;4,22;D+;C;A+;C+;B+
+157;ADC;Agree Realty Corporation;73,43;0,03%;4,53;3,50;4,28;D+;A-;A;B-;A-
+158;FLS;Flowserve Corporation;69,7;0,66%;4,53;4,00;4,54;C-;B;B;A-;A+
+159;VTOL;Bristow Group Inc.;37,94;2,57%;4,52;4,00;5,00;B-;B+;C-;C+;A+
+160;ANIP;ANI Pharmaceuticals, Inc.;88,93;-1,66%;4,52;5,00;4,28;C;B+;A-;B+;A
+161;DY;Dycom Industries, Inc.;293,62;2,52%;4,52;4,00;4,88;C-;B-;C;A-;A-
+162;MLI;Mueller Industries, Inc.;107,72;0,59%;4,51;4,00;5,00;C-;B-;A;A-;A+
+163;SIMO;Silicon Motion Technology Corporation;94,45;0,79%;4,51;4,00;4,50;C;B;C-;A-;B
+164;ACAD;ACADIA Pharmaceuticals Inc.;22,2;-1,64%;4,51;3,50;3,94;C;A+;A-;C+;A-
+165;BTG;B2Gold Corp.;4,09;4,60%;4,50;4,50;3,76;A-;A-;A+;B;B
+166;VOYA;Voya Financial, Inc.;71,05;-1,33%;4,50;4,00;3,63;C;B+;B+;C;B
+167;LDOS;Leidos Holdings, Inc.;196,87;-0,06%;4,50;4,00;4,00;D+;C+;B+;B+;A
