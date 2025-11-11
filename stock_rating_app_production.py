@@ -12,8 +12,9 @@ from common import (
     handle_http_status, get_page_soup, validate_stock_page, ticker_in_page,
     extract_number_from_text, find_keywords_in_text, search_text_with_context, 
     validate_score_range, map_score_to_rating, find_json_value, find_all_regex_matches,
-    build_error_response, build_success_response,
-    HEADERS_STANDARD, HEADERS_COMPREHENSIVE, RATING_KEYWORDS, BARCHART_RATING_KEYWORDS
+    build_error_response, build_success_response, extract_stock_analysis_data,
+    HEADERS_STANDARD, HEADERS_COMPREHENSIVE, RATING_KEYWORDS, BARCHART_RATING_KEYWORDS,
+    STOCKANALYSIS_RATING_KEYWORDS
 )
 
 # Load environment variables
@@ -214,43 +215,51 @@ def get_stockopedia_rating(ticker):
     except Exception as e:
         return build_error_response('stockrank', str(e)[:50], additional_fields={'style': 'Error'})
 
-def get_stockstory_rating(ticker):
+def get_stockanalysis_rating(ticker):
     try:
         ticker = normalize_ticker(ticker)
-        response = None
-        for exchange in ['nasdaq', 'nyse']:
-            url = f"https://stockstory.org/us/stocks/{exchange}/{ticker.lower()}"
-            resp, error = make_request(url, headers=HEADERS_COMPREHENSIVE, timeout=15)
-            if resp and resp.status_code == 200:
-                response = resp
-                break
-        if response is None:
-            return build_error_response('rating', 'Stock not found', additional_fields={'sentiment': 'N/A'})
-        tag_matches = find_all_regex_matches(response.text, r'aria-label="Company tag: ([^"]+)"')
-        rating_matches = find_all_regex_matches(response.text, r'aria-label="Company rating: ([^"]+)"')
-        unique_tags, unique_ratings = list(set(tag_matches)), list(set(rating_matches))
-        sentiment, rating_text = 'Unknown', 'N/A'
-        if unique_ratings:
-            rating_sentiment_map = {'Underperform': 'Negative', 'Outperform': 'Positive', 'Investable': 'Neutral', 'Speculative': 'Risky', 'Avoid': 'Negative'}
-            primary_rating = unique_ratings[0]
-            rating_text, sentiment = primary_rating, rating_sentiment_map.get(primary_rating, 'Neutral')
-            if sentiment in ['Neutral', 'Positive'] and unique_tags:
-                positive_tags = [tag for tag in unique_tags if tag in ['High Quality', 'Timely Buy', 'Good Value', 'Strong Growth']]
-                if positive_tags:
-                    rating_text = f"{primary_rating} + {', '.join(positive_tags)}"
-                    if sentiment == 'Neutral':
-                        sentiment = 'Positive'
-        elif unique_tags:
-            tag_sentiment_map = {'High Quality': 'Positive', 'Timely Buy': 'Positive', 'Good Value': 'Positive', 'Strong Growth': 'Positive'}
-            for tag in unique_tags:
-                if tag in tag_sentiment_map:
-                    sentiment, rating_text = tag_sentiment_map[tag], tag
-                    break
-            if sentiment == 'Unknown':
-                rating_text, sentiment = ', '.join(unique_tags[:2]) if unique_tags else 'N/A', 'Neutral'
-        return build_success_response({'rating': rating_text, 'sentiment': sentiment})
+        url = f"https://stockanalysis.com/stocks/{ticker.lower()}/forecast/"
+        
+        response, error = make_request(url, headers=HEADERS_COMPREHENSIVE, timeout=15)
+        if error:
+            return build_error_response('consensus', error['status'], additional_fields={'price_target': 'N/A'})
+        
+        status_error = handle_http_status(response.status_code, {
+            403: build_error_response('consensus', 'Access forbidden', additional_fields={'price_target': 'N/A'}),
+            429: build_error_response('consensus', 'Too many requests', additional_fields={'price_target': 'N/A'}),
+            404: build_error_response('consensus', 'Stock not found', additional_fields={'price_target': 'N/A'}),
+        })
+        if status_error:
+            return status_error
+        
+        soup = get_page_soup(response)
+        is_valid, title_text = validate_stock_page(soup, ticker)
+        if not is_valid or not ticker_in_page(ticker, title_text):
+            return build_error_response('consensus', 'Stock not found', additional_fields={'price_target': 'N/A'})
+        
+        analysis_data = extract_stock_analysis_data(soup, ticker)
+        if not analysis_data:
+            return build_error_response('consensus', 'Unable to extract data', additional_fields={'price_target': 'N/A'})
+        
+        result = {
+            'consensus': analysis_data.get('consensus', 'N/A'),
+            'price_target': analysis_data.get('price_target', 'N/A'),
+            'status': 'Found',
+            'success': True
+        }
+        
+        if 'analyst_count' in analysis_data:
+            result['analyst_count'] = analysis_data['analyst_count']
+        if 'upside_downside' in analysis_data:
+            result['upside_downside'] = analysis_data['upside_downside']
+        
+        return result
+    except requests.exceptions.Timeout:
+        return build_error_response('consensus', 'Request timeout', additional_fields={'price_target': 'Timeout'})
+    except requests.exceptions.ConnectionError:
+        return build_error_response('consensus', 'Connection failed', additional_fields={'price_target': 'Connection Error'})
     except Exception as e:
-        return build_error_response('rating', str(e)[:50], additional_fields={'sentiment': 'Error'})
+        return build_error_response('consensus', str(e)[:50], additional_fields={'price_target': 'Error'})
 
 @app.route('/')
 def index():
@@ -276,7 +285,7 @@ def get_ratings_stream():
                 executor.submit(get_tipranks_rating, ticker): 'tipranks',
                 executor.submit(get_barchart_rating, ticker): 'barchart',
                 executor.submit(get_stockopedia_rating, ticker): 'stockopedia',
-                executor.submit(get_stockstory_rating, ticker): 'stockstory'
+                executor.submit(get_stockanalysis_rating, ticker): 'stockanalysis'
             }
             results = {'ticker': ticker, 'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             for future in concurrent.futures.as_completed(future_to_platform, timeout=45):
@@ -307,7 +316,7 @@ def get_ratings():
     results = {'ticker': ticker, 'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                'zacks': {'status': 'Fetching...'},  'tipranks': {'status': 'Fetching...'},
                'barchart': {'status': 'Fetching...'}, 'stockopedia': {'status': 'Fetching...'},
-               'stockstory': {'status': 'Fetching...'}}
+               'stockanalysis': {'status': 'Fetching...'}}
     try:
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             future_to_platform = {
@@ -315,7 +324,7 @@ def get_ratings():
                 executor.submit(get_tipranks_rating, ticker): 'tipranks',
                 executor.submit(get_barchart_rating, ticker): 'barchart',
                 executor.submit(get_stockopedia_rating, ticker): 'stockopedia',
-                executor.submit(get_stockstory_rating, ticker): 'stockstory'
+                executor.submit(get_stockanalysis_rating, ticker): 'stockanalysis'
             }
             for future in concurrent.futures.as_completed(future_to_platform, timeout=45):
                 platform = future_to_platform[future]

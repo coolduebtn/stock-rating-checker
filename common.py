@@ -71,6 +71,17 @@ BARCHART_RATING_KEYWORDS = {
     'negative': 'Sell'
 }
 
+STOCKANALYSIS_RATING_KEYWORDS = {
+    'strong buy': 'Strong Buy',
+    'buy': 'Buy',
+    'hold': 'Hold',
+    'sell': 'Sell',
+    'strong sell': 'Strong Sell',
+    'bullish': 'Buy',
+    'bearish': 'Sell',
+    'neutral': 'Hold'
+}
+
 
 # ============================================================================
 # STRING UTILITIES
@@ -456,3 +467,78 @@ def build_success_response(data_dict, success=True):
     response['status'] = response.get('status', 'Found')
     response['success'] = success
     return response
+
+
+# ============================================================================
+# STOCK ANALYSIS UTILITIES
+# ============================================================================
+
+def extract_stock_analysis_data(soup, ticker):
+    """
+    Extract Analyst Consensus and Price Target from Stock Analysis
+    
+    Args:
+        soup: BeautifulSoup object of Stock Analysis forecast page
+        ticker: Stock ticker symbol
+    
+    Returns:
+        dict: {consensus, price_target, count, upside_downside} or error dict
+    """
+    if not soup:
+        return None
+    
+    data = {}
+    page_text = soup.get_text()
+    
+    # Look for the main consensus summary text:
+    # "26 analysts that cover Apple stock have a consensus rating of "Buy" and an average price target of $275.87"
+    
+    # Pattern 1: Look for "X analysts ... consensus rating of "..."
+    consensus_pattern = r'(\d+)\s*analysts?\s+(?:that\s+cover\s+)?(?:[^"]*?)consensus\s+(?:rating\s+)?of\s*["\']?(strong\s+buy|buy|hold|sell|strong\s+sell|bullish|bearish)["\']?'
+    match = re.search(consensus_pattern, page_text, re.IGNORECASE)
+    
+    if match:
+        analyst_count = int(match.group(1))
+        consensus_text = match.group(2).strip().lower()
+        
+        data['analyst_count'] = analyst_count
+        data['consensus'] = find_keywords_in_text(consensus_text, STOCKANALYSIS_RATING_KEYWORDS) or consensus_text.title()
+    else:
+        # Fallback: Look for just the rating keywords in common patterns
+        consensus_match = re.search(r'consensus\s+(?:rating\s+)?of\s*["\']?(\w+(?:\s+\w+)?)["\']?', page_text, re.IGNORECASE)
+        if consensus_match:
+            consensus_text = consensus_match.group(1).lower()
+            data['consensus'] = find_keywords_in_text(consensus_text, STOCKANALYSIS_RATING_KEYWORDS) or consensus_text.title()
+    
+    # Look for Price Target - pattern: "average price target of $275.87"
+    price_patterns = [
+        r'average\s+price\s+target\s+of\s*\$?([\d.]+)',
+        r'price\s+target[:\s]*\$?([\d.]+)',
+        r'target[:\s]*\$?([\d.]+)',
+    ]
+    
+    price_target = None
+    for pattern in price_patterns:
+        match = re.search(pattern, page_text, re.IGNORECASE)
+        if match:
+            try:
+                price_target = float(match.group(1))
+                data['price_target'] = price_target
+                break
+            except (ValueError, IndexError):
+                continue
+    
+    # Look for upside/downside percentage
+    upside_patterns = [
+        r'(\d+(?:\.\d+)?)\s*%\s*(?:upside|upside\s+potential)',
+        r'(?:upside|upside\s+potential)[:\s]*(\d+(?:\.\d+)?)\s*%',
+        r'(\d+(?:\.\d+)?)\s*%.*?upside',
+    ]
+    
+    for pattern in upside_patterns:
+        match = re.search(pattern, page_text, re.IGNORECASE)
+        if match:
+            data['upside_downside'] = f"{match.group(1)}%"
+            break
+    
+    return data if data else None

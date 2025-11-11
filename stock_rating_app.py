@@ -9,8 +9,9 @@ from common import (
     find_element_by_selectors, extract_text_by_selectors, extract_number_from_text,
     find_keywords_in_text, search_text_with_context, validate_score_range,
     map_score_to_rating, find_json_value, find_all_regex_matches,
-    build_error_response, build_success_response,
-    HEADERS_STANDARD, HEADERS_COMPREHENSIVE, RATING_KEYWORDS, BARCHART_RATING_KEYWORDS
+    build_error_response, build_success_response, extract_stock_analysis_data,
+    HEADERS_STANDARD, HEADERS_COMPREHENSIVE, RATING_KEYWORDS, BARCHART_RATING_KEYWORDS,
+    STOCKANALYSIS_RATING_KEYWORDS
 )
 
 app = Flask(__name__)
@@ -313,108 +314,64 @@ def get_stockopedia_rating(ticker):
     except Exception as e:
         return build_error_response('stockrank', str(e)[:50], additional_fields={'style': 'Error'})
 
-def get_stockstory_rating(ticker):
-    """Fetch StockStory rating with multi-exchange support"""
+
+
+def get_stockanalysis_rating(ticker):
+    """Fetch Stock Analysis Analyst Consensus and Price Target"""
     try:
-        import json
-        
         ticker = normalize_ticker(ticker)
-        exchanges = ['nasdaq', 'nyse']
+        url = f"https://stockanalysis.com/stocks/{ticker.lower()}/forecast/"
         
-        response = None
+        response, error = make_request(url, headers=HEADERS_COMPREHENSIVE, timeout=15)
+        if error:
+            return build_error_response('consensus', error['status'], additional_fields={'price_target': 'N/A'})
         
-        # Try each exchange until we find the stock
-        for exchange in exchanges:
-            url = f"https://stockstory.org/us/stocks/{exchange}/{ticker.lower()}"
-            
-            resp, error = make_request(url, headers=HEADERS_COMPREHENSIVE, timeout=15)
-            if resp and resp.status_code == 200:
-                response = resp
-                break
+        # Handle error codes
+        status_error = handle_http_status(response.status_code, {
+            403: build_error_response('consensus', 'Access forbidden', additional_fields={'price_target': 'N/A'}),
+            429: build_error_response('consensus', 'Too many requests', additional_fields={'price_target': 'N/A'}),
+            404: build_error_response('consensus', 'Stock not found', additional_fields={'price_target': 'N/A'}),
+        })
+        if status_error:
+            return status_error
         
-        if response is None:
-            return build_error_response('rating', 'Stock not found', additional_fields={'sentiment': 'N/A'})
+        soup = get_page_soup(response)
         
-        # Extract tags and ratings
-        tag_matches = find_all_regex_matches(response.text, r'aria-label="Company tag: ([^"]+)"')
-        rating_matches = find_all_regex_matches(response.text, r'aria-label="Company rating: ([^"]+)"')
+        is_valid, title_text = validate_stock_page(soup, ticker)
+        if not is_valid:
+            return build_error_response('consensus', 'Stock not found', additional_fields={'price_target': 'N/A'})
         
-        unique_tags = list(set(tag_matches))
-        unique_ratings = list(set(rating_matches))
+        if not ticker_in_page(ticker, title_text):
+            return build_error_response('consensus', 'Stock not found', additional_fields={'price_target': 'N/A'})
         
-        sentiment = 'Unknown'
-        rating_text = 'N/A'
+        # Extract Stock Analysis data
+        analysis_data = extract_stock_analysis_data(soup, ticker)
         
-        # Prioritize company ratings first
-        if unique_ratings:
-            rating_sentiment_map = {
-                'Underperform': 'Negative', 'Outperform': 'Positive',
-                'Investable': 'Neutral', 'Speculative': 'Risky', 'Avoid': 'Negative'
-            }
-            
-            primary_rating = unique_ratings[0]
-            rating_text = primary_rating
-            sentiment = rating_sentiment_map.get(primary_rating, 'Neutral')
-            
-            # Combine with positive tags if applicable
-            if sentiment in ['Neutral', 'Positive'] and unique_tags:
-                positive_tags = [tag for tag in unique_tags if tag in ['High Quality', 'Timely Buy', 'Good Value', 'Strong Growth']]
-                if positive_tags:
-                    rating_text = f"{primary_rating} + {', '.join(positive_tags)}"
-                    if sentiment == 'Neutral':
-                        sentiment = 'Positive'
+        if not analysis_data:
+            return build_error_response('consensus', 'Unable to extract data', additional_fields={'price_target': 'N/A'})
         
-        elif unique_tags:
-            # Use tags if no explicit ratings
-            tag_sentiment_map = {
-                'High Quality': 'Positive',
-                'Timely Buy': 'Positive',
-                'Good Value': 'Positive',
-                'Strong Growth': 'Positive'
-            }
-            
-            for tag in unique_tags:
-                if tag in tag_sentiment_map:
-                    sentiment = tag_sentiment_map[tag]
-                    rating_text = tag
-                    break
-            
-            if sentiment == 'Unknown':
-                rating_text = ', '.join(unique_tags[:2]) if unique_tags else 'N/A'
-                sentiment = 'Neutral'
+        # Build response
+        result = {
+            'consensus': analysis_data.get('consensus', 'N/A'),
+            'price_target': analysis_data.get('price_target', 'N/A'),
+            'status': 'Found',
+            'success': True
+        }
         
-        # Fallback: check JSON-LD structured data
-        if sentiment == 'Unknown':
-            json_ld_pattern = r'<script type="application/ld\+json">(.*?)</script>'
-            json_matches = find_all_regex_matches(response.text, json_ld_pattern)
-            
-            for json_text in json_matches:
-                try:
-                    data = json.loads(json_text)
-                    if isinstance(data, dict) and 'description' in data:
-                        desc = data['description']
-                        if 'We like' in desc:
-                            sentiment = 'Positive'
-                            rating_text = 'Like'
-                        elif 'We love' in desc:
-                            sentiment = 'Very Positive'
-                            rating_text = 'Love'
-                        elif "We're not sold" in desc or 'not sold' in desc:
-                            sentiment = 'Negative'
-                            rating_text = 'Not Sold'
-                        elif 'outstanding' in desc.lower():
-                            sentiment = 'Positive'
-                            rating_text = 'Outstanding'
-                        
-                        if sentiment != 'Unknown':
-                            break
-                except json.JSONDecodeError:
-                    continue
+        # Add optional fields if available
+        if 'analyst_count' in analysis_data:
+            result['analyst_count'] = analysis_data['analyst_count']
+        if 'upside_downside' in analysis_data:
+            result['upside_downside'] = analysis_data['upside_downside']
         
-        return build_success_response({'rating': rating_text, 'sentiment': sentiment})
+        return result
         
+    except requests.exceptions.Timeout:
+        return build_error_response('consensus', 'Request timeout', additional_fields={'price_target': 'Timeout'})
+    except requests.exceptions.ConnectionError:
+        return build_error_response('consensus', 'Connection failed', additional_fields={'price_target': 'Connection Error'})
     except Exception as e:
-        return build_error_response('rating', str(e)[:50], additional_fields={'sentiment': 'Error'})
+        return build_error_response('consensus', str(e)[:50], additional_fields={'price_target': 'Error'})
 
 @app.route('/')
 def index():
@@ -435,7 +392,7 @@ def get_ratings():
         'tipranks': {'status': 'Fetching...'},
         'barchart': {'status': 'Fetching...'},
         'stockopedia': {'status': 'Fetching...'},
-        'stockstory': {'status': 'Fetching...'}
+        'stockanalysis': {'status': 'Fetching...'}
     }
     
     try:
@@ -459,10 +416,10 @@ def get_ratings():
         stockopedia_result = get_stockopedia_rating(ticker)
         results['stockopedia'] = stockopedia_result
         
-        # Fetch StockStory rating
-        print(f"Fetching StockStory rating for {ticker}...")
-        stockstory_result = get_stockstory_rating(ticker)
-        results['stockstory'] = stockstory_result
+        # Fetch Stock Analysis consensus and price target
+        print(f"Fetching Stock Analysis data for {ticker}...")
+        stockanalysis_result = get_stockanalysis_rating(ticker)
+        results['stockanalysis'] = stockanalysis_result
         
         return jsonify(results)
     
