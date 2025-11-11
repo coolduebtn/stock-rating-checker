@@ -219,7 +219,6 @@
         .barchart-logo { background: linear-gradient(135deg, #f39c12, #e67e22); }
         .stockopedia-logo { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
         .stockstory-logo { background: linear-gradient(135deg, #16a085, #1abc9c); }
-        .marketwatch-logo { background: linear-gradient(135deg, #007fff, #0066cc); }
 
         .platform-name {
             font-size: 1.4rem;
@@ -327,7 +326,7 @@
     <div class="container">
         <div class="header">
             <h1>📈 Stock Rating Checker</h1>
-            <p>Get real-time ratings from Zacks, TipRanks, Barchart, Stockopedia, StockStory, and MarketWatch</p>
+            <p>Get real-time ratings from Zacks, TipRanks, Barchart, Stockopedia, and StockStory</p>
         </div>
 
         <div class="search-section">
@@ -435,23 +434,6 @@
                         <div class="rating-description" id="stockstoryStatus">-</div>
                     </div>
                 </div>
-
-                <!-- MarketWatch Card -->
-                <div class="rating-card">
-                    <div class="platform-header">
-                        <a href="#" class="platform-link" id="marketwatchLink" target="_blank" rel="noopener noreferrer">
-                            <div class="platform-info">
-                                <div class="platform-logo marketwatch-logo">MW</div>
-                                <div class="platform-name">MarketWatch</div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="rating-display">
-                        <div class="rating-value" id="marketwatchRating">-</div>
-                        <div class="rating-score" id="marketwatchTargetPrice">Target: -</div>
-                        <div class="rating-description" id="marketwatchStatus">-</div>
-                    </div>
-                </div>
             </div>
 
             <div class="consensus-section">
@@ -526,8 +508,7 @@
                 { name: 'stockopedia', delay: 300 },
                 { name: 'barchart', delay: 500 },
                 { name: 'tipranks', delay: 800 },
-                { name: 'stockstory', delay: 1200 },
-                { name: 'marketwatch', delay: 1600 }
+                { name: 'stockstory', delay: 1200 }
             ];
 
             let completed = 0;
@@ -569,9 +550,6 @@
                 case 'stockstory':
                     updateStockStoryCard('stockstory', data);
                     break;
-                case 'marketwatch':
-                    updateMarketWatchCard('marketwatch', data);
-                    break;
             }
         }
 
@@ -582,7 +560,7 @@
             updatePlatformLinks(ticker);
             
             // Show all cards with loading state
-            const platforms = ['zacks', 'tipranks', 'barchart', 'stockopedia', 'stockstory', 'marketwatch'];
+            const platforms = ['zacks', 'tipranks', 'barchart', 'stockopedia', 'stockstory'];
             platforms.forEach(platform => {
                 const ratingElement = document.getElementById(platform + 'Rating');
                 const statusElement = document.getElementById(platform + 'Status');
@@ -621,9 +599,6 @@
             // Update StockStory
             updateStockStoryCard('stockstory', data.stockstory);
 
-            // Update MarketWatch
-            updateMarketWatchCard('marketwatch', data.marketwatch);
-
             // Calculate and display consensus
             displayConsensus(data);
 
@@ -649,12 +624,6 @@
             
             // Update StockStory link (default to NASDAQ, could be enhanced to show actual exchange used)
             document.getElementById('stockstoryLink').href = `https://stockstory.org/us/stocks/nasdaq/${tickerLower}`;
-            
-            // Update MarketWatch link
-            document.getElementById('marketwatchLink').href = `https://www.marketwatch.com/investing/stock/${tickerLower}/analystestimates`;
-            
-            // Update MarketWatch link
-            document.getElementById('marketwatchLink').href = `https://www.marketwatch.com/investing/stock/${tickerLower}/analystestimates`;
         }
 
         function updateRatingCard(platform, data, scoreText) {
@@ -756,49 +725,6 @@
             }
         }
 
-        function updateMarketWatchCard(platform, data) {
-            const ratingElement = document.getElementById(platform + 'Rating');
-            const targetPriceElement = document.getElementById(platform + 'TargetPrice');
-            const statusElement = document.getElementById(platform + 'Status');
-
-            const recommendation = data.recommendation || 'N/A';
-            const targetPrice = data.target_price || 'N/A';
-            const numRatings = data.num_ratings || 'N/A';
-            
-            ratingElement.textContent = recommendation;
-            targetPriceElement.textContent = `Target: $${targetPrice}${numRatings !== 'N/A' ? ` (${numRatings} analysts)` : ''}`;
-            statusElement.textContent = data.status || 'Unknown';
-
-            // Remove existing rating classes
-            ratingElement.className = 'rating-value';
-            
-            // Add appropriate class based on recommendation
-            const rec = recommendation.toLowerCase();
-            if (rec.includes('strong buy') || rec.includes('strongbuy')) {
-                ratingElement.classList.add('rating-strong-buy');
-            } else if (rec.includes('buy')) {
-                ratingElement.classList.add('rating-buy');
-            } else if (rec.includes('hold') || rec.includes('neutral')) {
-                ratingElement.classList.add('rating-hold');
-            } else if (rec.includes('sell') && !rec.includes('strong')) {
-                ratingElement.classList.add('rating-sell');
-            } else if (rec.includes('strong sell') || rec.includes('strongsell')) {
-                ratingElement.classList.add('rating-strong-sell');
-            } else if (rec.includes('underperform')) {
-                ratingElement.classList.add('rating-underperform');
-            } else if (rec.includes('outperform') || rec.includes('overweight')) {
-                ratingElement.classList.add('rating-buy');
-            }
-
-            // Set status color
-            statusElement.className = 'rating-description';
-            if (data.success) {
-                statusElement.classList.add('status-success');
-            } else {
-                statusElement.classList.add('status-error');
-            }
-        }
-
         function displayConsensus(data) {
             const consensusElement = document.getElementById('consensusResult');
             const descriptionElement = document.getElementById('consensusDescription');
@@ -853,21 +779,6 @@
                     stockstoryRating.includes('outperform') || stockstoryRating.includes('good value')) {
                     positive++;
                 } else if (stockstoryRating.includes('underperform')) {
-                    negative++;
-                } else {
-                    neutral++;
-                }
-            }
-
-            // Analyze MarketWatch
-            if (data.marketwatch.success) {
-                total++;
-                const marketwatchRec = data.marketwatch.recommendation.toLowerCase();
-                if (marketwatchRec.includes('strong buy') || marketwatchRec.includes('buy') || 
-                    marketwatchRec.includes('outperform') || marketwatchRec.includes('overweight')) {
-                    positive++;
-                } else if (marketwatchRec.includes('strong sell') || marketwatchRec.includes('sell') || 
-                          marketwatchRec.includes('underperform') || marketwatchRec.includes('underweight')) {
                     negative++;
                 } else {
                     neutral++;

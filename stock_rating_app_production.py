@@ -537,244 +537,6 @@ def get_stockopedia_rating(ticker):
     except Exception as e:
         return {'stockrank': 'Error', 'style': 'Error', 'status': str(e)[:50], 'success': False}
 
-def get_marketwatch_analyst_estimates(ticker):
-    """Fetch MarketWatch analyst estimates including recommendation, target price, and number of ratings"""
-    try:
-        ticker = ticker.upper().strip()
-        
-        # Try multiple approaches to avoid blocking
-        session = requests.Session()
-        
-        # First, visit the main page to get session cookies
-        main_url = "https://www.marketwatch.com/"
-        
-        # Ultra-realistic browser headers
-        main_headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'Cache-Control': 'max-age=0',
-            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-ch-ua-full-version-list': '"Not_A Brand";v="8.0.0.0", "Chromium";v="120.0.6099.109", "Google Chrome";v="120.0.6099.109"',
-            'sec-ch-ua-arch': '"x86"',
-            'sec-ch-ua-bitness': '"64"',
-            'sec-ch-ua-model': '""',
-            'sec-ch-ua-wow64': '?0'
-        }
-        
-        # Add random delay to appear more human-like
-        time.sleep(random.uniform(2.0, 4.0))
-        
-        try:
-            # First request to establish session
-            session.get(main_url, headers=main_headers, timeout=15)
-            time.sleep(random.uniform(1.0, 3.0))
-        except:
-            pass  # Continue even if main page fails
-        
-        # Now request the analyst estimates page
-        url = f"https://www.marketwatch.com/investing/stock/{ticker.lower()}/analystestimates"
-        
-        # Enhanced headers for the actual request
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,fr;q=0.7',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'DNT': '1',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'same-origin',
-            'Sec-Fetch-User': '?1',
-            'Cache-Control': 'max-age=0',
-            'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-ch-ua-full-version-list': '"Not_A Brand";v="8.0.0.0", "Chromium";v="120.0.6099.109", "Google Chrome";v="120.0.6099.109"',
-            'sec-ch-ua-arch': '"x86"',
-            'sec-ch-ua-bitness': '"64"',
-            'sec-ch-ua-model': '""',
-            'sec-ch-ua-wow64': '?0',
-            'Referer': f'https://www.marketwatch.com/investing/stock/{ticker.lower()}',
-            'Origin': 'https://www.marketwatch.com'
-        }
-        
-        # Add random delay to appear more human-like
-        time.sleep(random.uniform(1.5, 3.5))
-        
-        # Try with retry logic
-        max_retries = 2
-        for attempt in range(max_retries):
-            try:
-                response = session.get(url, headers=headers, timeout=25)
-                
-                # If we get a successful response, break out of retry loop
-                if response.status_code == 200:
-                    break
-                elif response.status_code in [401, 403] and attempt < max_retries - 1:
-                    # Wait longer and try with different approach
-                    time.sleep(random.uniform(5.0, 8.0))
-                    
-                    # Try with simpler headers on retry
-                    headers = {
-                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Accept-Language': 'en-US,en;q=0.5',
-                        'Connection': 'keep-alive'
-                    }
-                    continue
-                else:
-                    break
-                    
-            except requests.exceptions.Timeout:
-                if attempt < max_retries - 1:
-                    time.sleep(random.uniform(3.0, 6.0))
-                    continue
-                else:
-                    raise
-        
-        # Enhanced error code handling for production
-        if response.status_code == 401:
-            return {'recommendation': 'Blocked (401)', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Unauthorized - try different IP/VPN', 'success': False}
-        elif response.status_code == 403:
-            return {'recommendation': 'Blocked (403)', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Forbidden - IP may be blacklisted', 'success': False}
-        elif response.status_code == 429:
-            return {'recommendation': 'Rate Limited', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Too many requests - wait and retry', 'success': False}
-        elif response.status_code == 404:
-            return {'recommendation': 'N/A', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Stock not found', 'success': False}
-        elif response.status_code == 503:
-            return {'recommendation': 'Service Unavailable', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Service temporarily down', 'success': False}
-        elif response.status_code == 520:
-            return {'recommendation': 'CloudFlare Error', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'CloudFlare blocking - try VPN', 'success': False}
-        elif response.status_code != 200:
-            return {'recommendation': 'Error', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': f'HTTP {response.status_code} - check connection', 'success': False}
-        
-        soup = BeautifulSoup(response.content, 'html.parser')
-        
-        # Check if we got a valid stock page first
-        page_title = soup.find('title')
-        if not page_title:
-            return {'recommendation': 'N/A', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Invalid page response', 'success': False}
-        
-        title_text = page_title.get_text().upper()
-        
-        # Check for error pages or access denied
-        if 'ACCESS DENIED' in title_text or 'UNAUTHORIZED' in title_text or 'BLOCKED' in title_text:
-            return {'recommendation': 'Blocked', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Access blocked by website', 'success': False}
-        
-        # Check for error pages or redirects
-        if 'NOT FOUND' in title_text or 'ERROR' in title_text or '404' in title_text:
-            return {'recommendation': 'N/A', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Stock not found', 'success': False}
-        
-        # Look for the analyst estimates table
-        recommendation = None
-        target_price = None
-        num_ratings = None
-        
-        # Method 1: Find the table with analyst estimates data
-        table = soup.find('table', class_='table value-pairs no-heading font--lato')
-        if table and table.find('tbody'):
-            rows = table.find('tbody').find_all('tr', class_='table__row')
-            
-            for row in rows:
-                cells = row.find_all('td', class_='table__cell')
-                if len(cells) >= 2:
-                    label = cells[0].get_text(strip=True)
-                    value = cells[1].get_text(strip=True)
-                    
-                    if 'Average Recommendation' in label:
-                        recommendation = value
-                    elif 'Average Target Price' in label:
-                        target_price = value
-                    elif 'Number Of Ratings' in label:
-                        num_ratings = value
-        
-        # Method 2: Alternative table structure
-        if not recommendation:
-            # Look for different table structures
-            tables = soup.find_all('table')
-            for table in tables:
-                table_text = table.get_text()
-                if 'Average Recommendation' in table_text:
-                    rows = table.find_all('tr')
-                    for row in rows:
-                        cells = row.find_all(['td', 'th'])
-                        if len(cells) >= 2:
-                            label = cells[0].get_text(strip=True)
-                            value = cells[1].get_text(strip=True)
-                            
-                            if 'Average Recommendation' in label:
-                                recommendation = value
-                            elif 'Average Target Price' in label:
-                                target_price = value
-                            elif 'Number Of Ratings' in label:
-                                num_ratings = value
-        
-        # Method 3: Look for recommendation in various possible locations (fallback)
-        if not recommendation:
-            rec_selectors = [
-                'td:contains("Average Recommendation") + td',
-                '[data-module="AnalystEstimates"] td:contains("Average Recommendation") + td',
-                '.analyst-estimates td:contains("Average Recommendation") + td',
-                '.table td:contains("recommendation") + td'
-            ]
-            
-            for selector in rec_selectors:
-                try:
-                    element = soup.select_one(selector)
-                    if element:
-                        recommendation = element.get_text(strip=True)
-                        break
-                except:
-                    continue
-        
-        # Check if it's a valid stock page by looking for the ticker
-        if ticker.lower() in title_text.lower() or ticker.upper() in title_text or ticker in soup.get_text().upper():
-            if recommendation:
-                return {
-                    'recommendation': recommendation,
-                    'target_price': target_price or 'N/A',
-                    'num_ratings': num_ratings or 'N/A',
-                    'status': 'Found',
-                    'success': True
-                }
-            else:
-                return {
-                    'recommendation': 'Not Available',
-                    'target_price': 'N/A',
-                    'num_ratings': 'N/A',
-                    'status': 'Stock found but no analyst estimates available',
-                    'success': True
-                }
-        else:
-            return {
-                'recommendation': 'N/A',
-                'target_price': 'N/A',
-                'num_ratings': 'N/A',
-                'status': 'Stock not found on page',
-                'success': False
-            }
-        
-    except requests.exceptions.Timeout:
-        return {'recommendation': 'Timeout', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Request timeout (server may be slow)', 'success': False}
-    except requests.exceptions.ConnectionError:
-        return {'recommendation': 'Connection Error', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': 'Connection failed (network issue)', 'success': False}
-    except requests.exceptions.RequestException as e:
-        return {'recommendation': 'Request Error', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': f'Request failed: {str(e)[:30]}', 'success': False}
-    except Exception as e:
-        return {'recommendation': 'Error', 'target_price': 'N/A', 'num_ratings': 'N/A', 'status': str(e)[:50], 'success': False}
-
 def get_stockstory_rating(ticker):
     """Fetch StockStory rating with multi-exchange support (NASDAQ -> NYSE fallback)"""
     try:
@@ -961,14 +723,13 @@ def get_ratings_stream():
     # but returns all data in a format that looks like it was streamed
     try:
         # Use ThreadPoolExecutor for parallel execution (same as regular endpoint)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             future_to_platform = {
                 executor.submit(get_zacks_rating, ticker): 'zacks',
                 executor.submit(get_tipranks_rating, ticker): 'tipranks',
                 executor.submit(get_barchart_rating, ticker): 'barchart',
                 executor.submit(get_stockopedia_rating, ticker): 'stockopedia',
-                executor.submit(get_stockstory_rating, ticker): 'stockstory',
-                executor.submit(get_marketwatch_analyst_estimates, ticker): 'marketwatch'
+                executor.submit(get_stockstory_rating, ticker): 'stockstory'
             }
             
             # Collect results as they complete (this is the key difference)
@@ -991,7 +752,7 @@ def get_ratings_stream():
                         'platform': platform,
                         'data': result,
                         'completed': completed,
-                        'total': 6
+                        'total': 5
                     }
                     streaming_data.append(f"data: {json.dumps(update_data)}\n\n")
                     
@@ -1010,7 +771,7 @@ def get_ratings_stream():
                         'platform': platform,
                         'data': error_result,
                         'completed': completed,
-                        'total': 6
+                        'total': 5
                     }
                     streaming_data.append(f"data: {json.dumps(update_data)}\n\n")
             
@@ -1055,21 +816,19 @@ def get_ratings():
         'tipranks': {'status': 'Fetching...'},
         'barchart': {'status': 'Fetching...'},
         'stockopedia': {'status': 'Fetching...'},
-        'stockstory': {'status': 'Fetching...'},
-        'marketwatch': {'status': 'Fetching...'}
+        'stockstory': {'status': 'Fetching...'}
     }
     
     try:
         # Use ThreadPoolExecutor for parallel execution
-        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             # Submit all tasks simultaneously
             future_to_platform = {
                 executor.submit(get_zacks_rating, ticker): 'zacks',
                 executor.submit(get_tipranks_rating, ticker): 'tipranks',
                 executor.submit(get_barchart_rating, ticker): 'barchart',
                 executor.submit(get_stockopedia_rating, ticker): 'stockopedia',
-                executor.submit(get_stockstory_rating, ticker): 'stockstory',
-                executor.submit(get_marketwatch_analyst_estimates, ticker): 'marketwatch'
+                executor.submit(get_stockstory_rating, ticker): 'stockstory'
             }
             
             # Collect results as they complete
