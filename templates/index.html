@@ -135,6 +135,34 @@
             margin-bottom: 10px;
         }
 
+        .price-display {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .current-price {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .price-change {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .price-positive {
+            color: #27ae60;
+        }
+
+        .price-negative {
+            color: #e74c3c;
+        }
+
         .timestamp {
             color: #666;
             font-size: 0.9rem;
@@ -346,6 +374,10 @@
         <div class="results-section" id="resultsSection">
             <div class="ticker-header">
                 <div class="ticker-symbol" id="tickerSymbol"></div>
+                <div class="price-display" id="priceDisplay" style="display: none;">
+                    <div class="current-price" id="currentPrice">-</div>
+                    <div class="price-change" id="priceChange">-</div>
+                </div>
                 <div class="timestamp" id="timestamp"></div>
             </div>
 
@@ -502,6 +534,9 @@
             // Update ticker and timestamp
             document.getElementById('tickerSymbol').textContent = data.ticker;
             
+            // Update price display immediately
+            updatePriceDisplay(data.price);
+            
             // Platform display order (fastest to slowest typically)
             const platforms = [
                 { name: 'zacks', delay: 100 },
@@ -558,6 +593,15 @@
             document.getElementById('tickerSymbol').textContent = ticker;
             document.getElementById('timestamp').textContent = 'Fetching data...';
             updatePlatformLinks(ticker);
+            
+            // Show price loading state
+            const priceDisplay = document.getElementById('priceDisplay');
+            const currentPrice = document.getElementById('currentPrice');
+            const priceChange = document.getElementById('priceChange');
+            currentPrice.textContent = 'Loading...';
+            priceChange.textContent = 'Fetching price...';
+            priceChange.className = 'price-change';
+            priceDisplay.style.display = 'inline-block';
             
             // Show all cards with loading state
             const platforms = ['zacks', 'tipranks', 'barchart', 'stockopedia', 'stockanalysis'];
@@ -682,7 +726,7 @@
             const statusElement = document.getElementById(platform + 'Status');
 
             const consensus = data.consensus || 'N/A';
-            const analysts = data.analysts || 'N/A';
+            const analysts = data.analyst_count || 'N/A';
             const priceTarget = data.price_target || 'N/A';
             
             ratingElement.textContent = consensus;
@@ -707,6 +751,35 @@
             // Update Stock Analysis link
             const ticker = document.getElementById('tickerSymbol').textContent;
             document.getElementById('stockanalysisLink').href = `https://stockanalysis.com/stocks/${ticker.toLowerCase()}/forecast/`;
+        }
+
+        function updatePriceDisplay(priceData) {
+            const priceDisplay = document.getElementById('priceDisplay');
+            const currentPrice = document.getElementById('currentPrice');
+            const priceChange = document.getElementById('priceChange');
+
+            if (priceData && priceData.success && priceData.current_price !== 'N/A') {
+                const price = priceData.current_price;
+                const change = priceData.change;
+                const changePercent = priceData.change_percent;
+                const currency = priceData.currency || 'USD';
+
+                // Update current price
+                currentPrice.textContent = `$${price} ${currency}`;
+
+                // Update change with appropriate color and sign
+                const changeText = `${change >= 0 ? '+' : ''}${change} (${changePercent >= 0 ? '+' : ''}${changePercent}%)`;
+                priceChange.textContent = changeText;
+                
+                // Apply color based on positive/negative
+                priceChange.className = 'price-change ' + (change >= 0 ? 'price-positive' : 'price-negative');
+
+                // Show the price display
+                priceDisplay.style.display = 'inline-block';
+            } else {
+                // Hide price display if no data
+                priceDisplay.style.display = 'none';
+            }
         }
 
         function displayConsensus(data) {

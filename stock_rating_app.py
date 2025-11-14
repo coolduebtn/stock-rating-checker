@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from datetime import datetime
+import yfinance as yf
 from common import (
     normalize_ticker, is_foreign_ticker, add_human_delay, make_request,
     handle_http_status, get_page_soup, validate_stock_page, ticker_in_page,
@@ -15,6 +16,50 @@ from common import (
 )
 
 app = Flask(__name__)
+
+def get_stock_price(ticker):
+    """Fetch current stock price and daily change using Yahoo Finance"""
+    try:
+        ticker = normalize_ticker(ticker)
+        stock = yf.Ticker(ticker)
+        info = stock.info
+        
+        current_price = info.get('currentPrice') or info.get('regularMarketPrice')
+        previous_close = info.get('previousClose')
+        currency = info.get('currency', 'USD')
+        
+        if current_price and previous_close:
+            change = current_price - previous_close
+            change_percent = (change / previous_close) * 100
+            
+            return {
+                'current_price': round(current_price, 2),
+                'previous_close': round(previous_close, 2),
+                'change': round(change, 2),
+                'change_percent': round(change_percent, 2),
+                'currency': currency,
+                'success': True,
+                'status': 'Found'
+            }
+        else:
+            return {
+                'current_price': 'N/A',
+                'change': 'N/A', 
+                'change_percent': 'N/A',
+                'currency': 'USD',
+                'success': False,
+                'status': 'Price data not available'
+            }
+            
+    except Exception as e:
+        return {
+            'current_price': 'N/A',
+            'change': 'N/A',
+            'change_percent': 'N/A', 
+            'currency': 'USD',
+            'success': False,
+            'status': f'Error: {str(e)[:50]}'
+        }
 
 def get_zacks_rating(ticker):
     """Fetch Zacks rating - confirmed working method"""
@@ -388,6 +433,7 @@ def get_ratings():
     results = {
         'ticker': ticker,
         'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'price': {'status': 'Fetching...'},
         'zacks': {'status': 'Fetching...'},
         'tipranks': {'status': 'Fetching...'},
         'barchart': {'status': 'Fetching...'},
@@ -396,6 +442,11 @@ def get_ratings():
     }
     
     try:
+        # Fetch stock price data
+        print(f"Fetching price data for {ticker}...")
+        price_result = get_stock_price(ticker)
+        results['price'] = price_result
+        
         # Fetch Zacks rating
         print(f"Fetching Zacks rating for {ticker}...")
         zacks_result = get_zacks_rating(ticker)
