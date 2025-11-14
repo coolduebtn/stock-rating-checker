@@ -106,6 +106,10 @@
             transform: none;
         }
 
+        .platform-link {
+            cursor: pointer;
+        }
+
         /* Mobile touch improvements */
         @media (hover: none) and (pointer: coarse) {
             #searchBtn:hover {
@@ -124,7 +128,21 @@
             }
             
             .platform-link:hover {
-                opacity: 1;
+                background-color: transparent;
+                transform: none;
+            }
+
+            .platform-link:hover .platform-name::after {
+                opacity: 0.4;
+            }
+            
+            .platform-link:active {
+                background-color: rgba(102, 126, 234, 0.2);
+                transform: scale(0.98);
+            }
+
+            .platform-name::after {
+                opacity: 0.3;
             }
         }
 
@@ -240,17 +258,26 @@
             text-decoration: none;
             color: inherit;
             flex: 1;
-            transition: opacity 0.2s ease;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+            padding: 4px;
+            margin: -4px;
         }
 
         .platform-link:hover {
-            opacity: 0.8;
+            background-color: rgba(102, 126, 234, 0.1);
+            transform: translateX(3px);
             text-decoration: none;
             color: inherit;
         }
 
         .platform-link:visited {
             color: inherit;
+        }
+
+        .platform-link:active {
+            transform: translateX(1px);
+            background-color: rgba(102, 126, 234, 0.15);
         }
 
         .platform-info {
@@ -282,6 +309,19 @@
             font-size: 1.4rem;
             font-weight: 600;
             color: #2c3e50;
+            position: relative;
+        }
+
+        .platform-name::after {
+            content: "🔗";
+            font-size: 0.8rem;
+            opacity: 0;
+            margin-left: 8px;
+            transition: opacity 0.2s ease;
+        }
+
+        .platform-link:hover .platform-name::after {
+            opacity: 0.6;
         }
 
         .rating-display {
@@ -462,6 +502,11 @@
                 font-size: 1.1rem;
             }
 
+            .platform-name::after {
+                font-size: 0.7rem;
+                margin-left: 6px;
+            }
+
             .rating-value {
                 font-size: 1.8rem;
                 padding: 12px;
@@ -579,6 +624,11 @@
                 line-height: 1.2;
             }
 
+            .platform-name::after {
+                font-size: 0.6rem;
+                margin-left: 4px;
+            }
+
             .rating-value {
                 font-size: 1.6rem;
                 padding: 10px;
@@ -602,7 +652,6 @@
                 <input type="text" id="tickerInput" placeholder="Enter ticker symbol (e.g., AAPL)" maxlength="10">
                 <button id="searchBtn" onclick="searchRatings()">Get Ratings</button>
             </div>
-            <p style="color: #666; font-size: 0.9rem;">Enter a US stock ticker symbol to get ratings from all platforms</p>
             
             <div class="loading" id="loading">
                 <div class="spinner"></div>
@@ -628,7 +677,7 @@
                         <a href="#" class="platform-link" id="zacksLink" target="_blank" rel="noopener noreferrer">
                             <div class="platform-info">
                                 <div class="platform-logo zacks-logo">Z</div>
-                                <div class="platform-name">Zacks Investment Research</div>
+                                <div class="platform-name">Zacks</div>
                             </div>
                         </a>
                     </div>
