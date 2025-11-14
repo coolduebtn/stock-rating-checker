@@ -367,7 +367,7 @@
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <p style="margin-top: 15px; color: #666;">Fetching from all 6 platforms in parallel...</p>
-                <p style="margin-top: 5px; color: #999; font-size: 0.8rem;">This should take 5-10 seconds instead of 30+ seconds!</p>
+                <p style="margin-top: 5px; color: #999; font-size: 0.8rem;">Optimized to ~3-4 seconds instead of 8+ seconds!</p>
             </div>
         </div>
 
@@ -531,41 +531,23 @@
         }
 
         function displayResultsProgressively(data) {
-            // Update ticker and timestamp
-            document.getElementById('tickerSymbol').textContent = data.ticker;
+            // Update ticker with stock name and ticker symbol
+            updateTickerDisplay(data.ticker, data.price ? data.price.stock_name : null);
+            document.getElementById('timestamp').textContent = 'Updated: ' + data.timestamp;
             
-            // Update price display immediately
+            // Update all platform data immediately (no artificial delays)
             updatePriceDisplay(data.price);
+            updatePlatformCard('zacks', data.zacks);
+            updatePlatformCard('tipranks', data.tipranks);
+            updatePlatformCard('barchart', data.barchart);
+            updatePlatformCard('stockopedia', data.stockopedia);
+            updatePlatformCard('stockanalysis', data.stockanalysis);
             
-            // Platform display order (fastest to slowest typically)
-            const platforms = [
-                { name: 'zacks', delay: 100 },
-                { name: 'stockopedia', delay: 300 },
-                { name: 'barchart', delay: 500 },
-                { name: 'tipranks', delay: 800 },
-                { name: 'stockanalysis', delay: 1200 }
-            ];
-
-            let completed = 0;
-
-            platforms.forEach((platform, index) => {
-                setTimeout(() => {
-                    // Update the specific platform
-                    updatePlatformCard(platform.name, data[platform.name]);
-                    completed++;
-                    
-                    // Update progress
-                    document.getElementById('timestamp').textContent = 
-                        `Loading... ${completed}/${platforms.length} platforms complete`;
-                    
-                    // If all are done, finalize
-                    if (completed === platforms.length) {
-                        document.getElementById('timestamp').textContent = 'Updated: ' + data.timestamp;
-                        displayConsensus(data);
-                        document.getElementById('loading').style.display = 'none';
-                    }
-                }, platform.delay);
-            });
+            // Display consensus immediately
+            displayConsensus(data);
+            
+            // Hide loading indicator
+            document.getElementById('loading').style.display = 'none';
         }
 
         function updatePlatformCard(platform, data) {
@@ -751,6 +733,18 @@
             // Update Stock Analysis link
             const ticker = document.getElementById('tickerSymbol').textContent;
             document.getElementById('stockanalysisLink').href = `https://stockanalysis.com/stocks/${ticker.toLowerCase()}/forecast/`;
+        }
+
+        function updateTickerDisplay(ticker, stockName) {
+            const tickerElement = document.getElementById('tickerSymbol');
+            
+            if (stockName && stockName !== ticker) {
+                // Display stock name with ticker in brackets
+                tickerElement.textContent = `${stockName} (${ticker})`;
+            } else {
+                // Fallback to just ticker if no stock name available
+                tickerElement.textContent = ticker;
+            }
         }
 
         function updatePriceDisplay(priceData) {

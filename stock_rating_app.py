@@ -4,6 +4,8 @@ from bs4 import BeautifulSoup
 import re
 from datetime import datetime
 import yfinance as yf
+import concurrent.futures
+import threading
 from common import (
     normalize_ticker, is_foreign_ticker, add_human_delay, make_request,
     handle_http_status, get_page_soup, validate_stock_page, ticker_in_page,
@@ -28,6 +30,9 @@ def get_stock_price(ticker):
         previous_close = info.get('previousClose')
         currency = info.get('currency', 'USD')
         
+        # Get stock name (company name)
+        stock_name = info.get('longName') or info.get('shortName') or ticker
+        
         if current_price and previous_close:
             change = current_price - previous_close
             change_percent = (change / previous_close) * 100
@@ -38,6 +43,7 @@ def get_stock_price(ticker):
                 'change': round(change, 2),
                 'change_percent': round(change_percent, 2),
                 'currency': currency,
+                'stock_name': stock_name,
                 'success': True,
                 'status': 'Found'
             }
@@ -47,6 +53,7 @@ def get_stock_price(ticker):
                 'change': 'N/A', 
                 'change_percent': 'N/A',
                 'currency': 'USD',
+                'stock_name': stock_name,
                 'success': False,
                 'status': 'Price data not available'
             }
@@ -57,6 +64,7 @@ def get_stock_price(ticker):
             'change': 'N/A',
             'change_percent': 'N/A', 
             'currency': 'USD',
+            'stock_name': ticker,  # Fallback to ticker if error
             'success': False,
             'status': f'Error: {str(e)[:50]}'
         }
@@ -442,35 +450,48 @@ def get_ratings():
     }
     
     try:
-        # Fetch stock price data
-        print(f"Fetching price data for {ticker}...")
-        price_result = get_stock_price(ticker)
-        results['price'] = price_result
+        print(f"Fetching ratings for {ticker} using parallel execution...")
+        start_time = datetime.now()
         
-        # Fetch Zacks rating
-        print(f"Fetching Zacks rating for {ticker}...")
-        zacks_result = get_zacks_rating(ticker)
-        results['zacks'] = zacks_result
+        # Define all functions to run in parallel
+        fetch_functions = {
+            'price': lambda: get_stock_price(ticker),
+            'zacks': lambda: get_zacks_rating(ticker),
+            'tipranks': lambda: get_tipranks_rating(ticker),
+            'barchart': lambda: get_barchart_rating(ticker),
+            'stockopedia': lambda: get_stockopedia_rating(ticker),
+            'stockanalysis': lambda: get_stockanalysis_rating(ticker)
+        }
         
-        # Fetch TipRanks rating
-        print(f"Fetching TipRanks rating for {ticker}...")
-        tipranks_result = get_tipranks_rating(ticker)
-        results['tipranks'] = tipranks_result
+        # Execute all functions concurrently
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+            # Submit all tasks
+            future_to_platform = {
+                executor.submit(func): platform 
+                for platform, func in fetch_functions.items()
+            }
+            
+            # Collect results as they complete
+            for future in concurrent.futures.as_completed(future_to_platform):
+                platform = future_to_platform[future]
+                try:
+                    result = future.result(timeout=15)  # 15 second timeout per request
+                    results[platform] = result
+                    print(f"✓ {platform.title()} completed")
+                except Exception as e:
+                    print(f"✗ {platform.title()} failed: {str(e)[:50]}")
+                    results[platform] = {
+                        'status': f'Error: {str(e)[:50]}',
+                        'success': False,
+                        'rating': 'Error' if platform != 'price' else 'N/A'
+                    }
         
-        # Fetch Barchart rating
-        print(f"Fetching Barchart rating for {ticker}...")
-        barchart_result = get_barchart_rating(ticker)
-        results['barchart'] = barchart_result
+        end_time = datetime.now()
+        execution_time = (end_time - start_time).total_seconds()
+        print(f"Parallel execution completed in {execution_time:.2f}s")
         
-        # Fetch Stockopedia rating
-        print(f"Fetching Stockopedia rating for {ticker}...")
-        stockopedia_result = get_stockopedia_rating(ticker)
-        results['stockopedia'] = stockopedia_result
-        
-        # Fetch Stock Analysis consensus and price target
-        print(f"Fetching Stock Analysis data for {ticker}...")
-        stockanalysis_result = get_stockanalysis_rating(ticker)
-        results['stockanalysis'] = stockanalysis_result
+        # Update timestamp to reflect actual completion time
+        results['timestamp'] = end_time.strftime('%Y-%m-%d %H:%M:%S')
         
         return jsonify(results)
     
