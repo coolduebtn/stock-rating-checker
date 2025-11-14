@@ -3,7 +3,6 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from datetime import datetime
-import yfinance as yf
 import concurrent.futures
 import threading
 from common import (
@@ -20,43 +19,99 @@ from common import (
 app = Flask(__name__)
 
 def get_stock_price(ticker):
-    """Fetch current stock price and daily change using Yahoo Finance"""
+    """Fetch current stock price and daily change using Zacks"""
     try:
         ticker = normalize_ticker(ticker)
-        stock = yf.Ticker(ticker)
-        info = stock.info
+        url = f"https://www.zacks.com/stock/quote/{ticker}"
         
-        current_price = info.get('currentPrice') or info.get('regularMarketPrice')
-        previous_close = info.get('previousClose')
-        currency = info.get('currency', 'USD')
+        response, error = make_request(url, headers=HEADERS_STANDARD, timeout=10)
+        if error:
+            return build_error_response('current_price', error['status'], 
+                                      additional_fields={'change': 'N/A', 'change_percent': 'N/A', 
+                                                       'currency': 'USD', 'stock_name': ticker})
         
-        # Get stock name (company name)
-        stock_name = info.get('longName') or info.get('shortName') or ticker
+        if response.status_code != 200:
+            status_error = handle_http_status(response.status_code)
+            if status_error:
+                return {**status_error, 'current_price': 'N/A', 'change': 'N/A', 
+                       'change_percent': 'N/A', 'currency': 'USD', 'stock_name': ticker}
         
-        if current_price and previous_close:
-            change = current_price - previous_close
-            change_percent = (change / previous_close) * 100
+        soup = get_page_soup(response)
+        
+        # Extract stock name from H1 title
+        stock_name = ticker  # Default fallback
+        h1_elements = soup.find_all('h1')
+        for h1 in h1_elements:
+            text = h1.get_text(strip=True)
+            if ticker in text and '(' in text and ')' in text:
+                # Extract company name before ticker in parentheses
+                stock_name = text.split('(')[0].strip()
+                break
+        
+        # Extract current price from .last_price
+        price_element = soup.find(class_='last_price')
+        current_price = None
+        currency = 'USD'
+        
+        if price_element:
+            price_text = price_element.get_text(strip=True)
+            # Extract price from format like "$272.41USD"
+            import re
+            price_match = re.search(r'\$?([\d,]+\.?\d*)', price_text)
+            if price_match:
+                current_price = float(price_match.group(1).replace(',', ''))
+            
+            # Extract currency if present
+            if 'USD' in price_text:
+                currency = 'USD'
+            elif 'EUR' in price_text:
+                currency = 'EUR'
+            elif 'GBP' in price_text:
+                currency = 'GBP'
+        
+        # Extract change from .change element
+        change_element = soup.find(class_='change')
+        change = None
+        change_percent = None
+        
+        if change_element:
+            change_text = change_element.get_text(strip=True)
+            # Parse format like "-0.54 (-0.20%)"
+            import re
+            change_match = re.search(r'([+-]?[\d.]+)\s*\(([+-]?[\d.]+)%\)', change_text)
+            if change_match:
+                change = float(change_match.group(1))
+                change_percent = float(change_match.group(2))
+        
+        if current_price is not None:
+            previous_close = round(current_price - (change if change else 0), 2)
             
             return {
                 'current_price': round(current_price, 2),
-                'previous_close': round(previous_close, 2),
-                'change': round(change, 2),
-                'change_percent': round(change_percent, 2),
+                'previous_close': previous_close,
+                'change': round(change, 2) if change is not None else 'N/A',
+                'change_percent': round(change_percent, 2) if change_percent is not None else 'N/A',
                 'currency': currency,
                 'stock_name': stock_name,
                 'success': True,
                 'status': 'Found'
             }
         else:
-            return {
-                'current_price': 'N/A',
-                'change': 'N/A', 
-                'change_percent': 'N/A',
-                'currency': 'USD',
-                'stock_name': stock_name,
-                'success': False,
-                'status': 'Price data not available'
-            }
+            # Check if it's a valid stock page
+            if ticker in str(soup):
+                return {
+                    'current_price': 'N/A',
+                    'change': 'N/A',
+                    'change_percent': 'N/A',
+                    'currency': 'USD',
+                    'stock_name': stock_name,
+                    'success': False,
+                    'status': 'Price data not available'
+                }
+            else:
+                return build_error_response('current_price', 'Stock not found',
+                                          additional_fields={'change': 'N/A', 'change_percent': 'N/A',
+                                                           'currency': 'USD', 'stock_name': ticker})
             
     except Exception as e:
         return {
