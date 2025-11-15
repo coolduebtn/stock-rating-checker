@@ -35,6 +35,7 @@
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
         }
 
         .header h1 {
@@ -46,6 +47,51 @@
         .header p {
             font-size: 1.1rem;
             opacity: 0.8;
+        }
+
+        .donate-section {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+        }
+
+        .donate-button {
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .donate-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .donate-button button {
+            background: linear-gradient(135deg, #FFC439, #FFB800);
+            color: #2C2E2F;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(255, 196, 57, 0.3);
+            border: 1px solid #E6A800;
+        }
+
+        .donate-button button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 196, 57, 0.4);
+            background: linear-gradient(135deg, #FFD700, #FFC439);
+        }
+
+        .donate-button button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(255, 196, 57, 0.2);
+            background: linear-gradient(135deg, #FFB800, #E6A800);
         }
 
         .search-section {
@@ -410,6 +456,7 @@
 
             .header {
                 padding: 20px 15px;
+                padding-top: 60px;
             }
 
             .header h1 {
@@ -419,6 +466,17 @@
 
             .header p {
                 font-size: 0.9rem;
+            }
+
+            .donate-section {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+
+            .donate-button button {
+                font-size: 12px;
+                padding: 6px 12px;
             }
 
             .search-section {
@@ -582,10 +640,21 @@
 
             .header {
                 padding: 15px 10px;
+                padding-top: 55px;
             }
 
             .header h1 {
                 font-size: 1.5rem;
+            }
+
+            .donate-section {
+                top: 8px;
+                right: 8px;
+            }
+
+            .donate-button button {
+                font-size: 11px;
+                padding: 5px 10px;
             }
 
             .search-section {
@@ -643,6 +712,13 @@
 <body>
     <div class="container">
         <div class="header">
+            <div class="donate-section">
+                <form action="https://www.paypal.com/donate" method="post" target="_blank" class="donate-button">
+                    <input type="hidden" name="hosted_button_id" value="5NZMFCF3GK3CQ" />
+                    <button type="submit" title="Support this project via PayPal">Buy me Coffee ☕</button>
+                    <img alt="" border="0" src="https://www.paypal.com/en_BE/i/scr/pixel.gif" width="1" height="1" />
+                </form>
+            </div>
             <h1>📈 Stock Rating Checker</h1>
             <p>Get real-time ratings from Zacks, TipRanks, Barchart, Stockopedia, and Stock Analysis</p>
         </div>
@@ -761,6 +837,15 @@
                 <div class="consensus-title">📊 Consensus Analysis</div>
                 <div class="consensus-result" id="consensusResult">-</div>
                 <div class="rating-description" id="consensusDescription">-</div>
+            </div>
+
+            <div class="bottom-donate-section" style="text-align: center; margin-top: 30px; padding: 0; background: none;">
+                <p style="color: #666; margin-bottom: 15px; font-size: 0.9rem;">Found this tool helpful? ☕</p>
+                <form action="https://www.paypal.com/donate" method="post" target="_blank" class="donate-button" style="display: inline-block;">
+                    <input type="hidden" name="hosted_button_id" value="5NZMFCF3GK3CQ" />
+                    <button type="submit" title="Support this project via PayPal">Buy me Coffee ☕</button>
+                    <img alt="" border="0" src="https://www.paypal.com/en_BE/i/scr/pixel.gif" width="1" height="1" />
+                </form>
             </div>
         </div>
 
