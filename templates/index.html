@@ -94,6 +94,14 @@
             background: linear-gradient(135deg, #FFB800, #E6A800);
         }
 
+        .bottom-donate-section {
+            background: transparent !important;
+            margin-left: -40px;
+            margin-right: -40px;
+            padding-left: 40px;
+            padding-right: 40px;
+        }
+
         .search-section {
             padding: 40px;
             text-align: center;
@@ -479,6 +487,13 @@
                 padding: 6px 12px;
             }
 
+            .bottom-donate-section {
+                margin-left: -25px;
+                margin-right: -25px;
+                padding-left: 25px;
+                padding-right: 25px;
+            }
+
             .search-section {
                 padding: 25px 15px;
             }
@@ -657,6 +672,13 @@
                 padding: 5px 10px;
             }
 
+            .bottom-donate-section {
+                margin-left: -20px;
+                margin-right: -20px;
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
             .search-section {
                 padding: 20px 10px;
             }
@@ -712,11 +734,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="donate-section">
-                <form action="https://www.paypal.com/donate" method="post" target="_blank" class="donate-button">
+            <div style="position: absolute; top: 20px; right: 20px; z-index: 10;">
+                <form action="https://www.paypal.com/donate" method="post" target="_blank" style="display: inline-block;">
                     <input type="hidden" name="hosted_button_id" value="5NZMFCF3GK3CQ" />
-                    <button type="submit" title="Support this project via PayPal">Buy me Coffee ☕</button>
-                    <img alt="" border="0" src="https://www.paypal.com/en_BE/i/scr/pixel.gif" width="1" height="1" />
+                    <button type="submit" title="Support this project via PayPal"
+                            style="background: #FFC439; color: #2C2E2F; border: none; padding: 8px 16px; border-radius: 25px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(255, 196, 57, 0.3); transition: all 0.3s ease;"
+                            onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(255, 196, 57, 0.4)';"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(255, 196, 57, 0.3)';">
+                        Buy me Coffee ☕
+                    </button>
                 </form>
             </div>
             <h1>📈 Stock Rating Checker</h1>
@@ -821,7 +847,7 @@
                         <a href="#" class="platform-link" id="stockanalysisLink" target="_blank" rel="noopener noreferrer">
                             <div class="platform-info">
                                 <div class="platform-logo stockanalysis-logo">SA</div>
-                                <div class="platform-name">Stock Analysis</div>
+                                <div class="platform-name">Analysts Forecast</div>
                             </div>
                         </a>
                     </div>
@@ -839,12 +865,14 @@
                 <div class="rating-description" id="consensusDescription">-</div>
             </div>
 
-            <div class="bottom-donate-section" style="text-align: center; margin-top: 30px; padding: 0; background: none;">
-                <p style="color: #666; margin-bottom: 15px; font-size: 0.9rem;">Found this tool helpful? ☕</p>
-                <form action="https://www.paypal.com/donate" method="post" target="_blank" class="donate-button" style="display: inline-block;">
+            <div style="text-align: center; margin-top: 15px; padding: 10px;">
+                <p style="color: #666; margin-bottom: 10px; font-size: 0.9rem;">Found this tool helpful? ☕</p>
+                <form action="https://www.paypal.com/donate" method="post" target="_blank" style="display: inline-block;">
                     <input type="hidden" name="hosted_button_id" value="5NZMFCF3GK3CQ" />
-                    <button type="submit" title="Support this project via PayPal">Buy me Coffee ☕</button>
-                    <img alt="" border="0" src="https://www.paypal.com/en_BE/i/scr/pixel.gif" width="1" height="1" />
+                    <button type="submit" title="Support this project via PayPal" 
+                            style="background: #FFC439; color: #2C2E2F; border: none; padding: 8px 16px; border-radius: 25px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(255, 196, 57, 0.3);">
+                        Buy me Coffee ☕
+                    </button>
                 </form>
             </div>
         </div>
