@@ -255,6 +255,48 @@ body {
     color: #e74c3c;
 }
 
+.price-target-display {
+    margin: 15px 0;
+    padding: 12px 15px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border-radius: 8px;
+    display: inline-block;
+    margin-left: 15px;
+    color: white;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.target-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-bottom: 3px;
+    font-weight: 500;
+}
+
+.target-price {
+    font-size: 1.6rem;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.price-difference {
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.price-difference.positive {
+    background: rgba(46, 204, 113, 0.8);
+    color: #ffffff;
+}
+
+.price-difference.negative {
+    background: rgba(231, 76, 60, 0.8);
+    color: #ffffff;
+}
+
 .timestamp {
     color: #666;
     font-size: 0.9rem;
@@ -537,6 +579,28 @@ body {
 
     .price-change {
         font-size: 1rem;
+    }
+
+    .price-target-display {
+        margin: 10px 0;
+        margin-left: 0;
+        padding: 10px 12px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .target-label {
+        font-size: 0.8rem;
+        margin-bottom: 2px;
+    }
+
+    .target-price {
+        font-size: 1.3rem;
+        margin-bottom: 2px;
+    }
+
+    .price-difference {
+        font-size: 0.9rem;
     }
 
     .ratings-grid {

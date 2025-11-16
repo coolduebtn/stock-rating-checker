@@ -47,6 +47,11 @@
                     <div class="current-price" id="currentPrice">-</div>
                     <div class="price-change" id="priceChange">-</div>
                 </div>
+                <div class="price-target-display" id="priceTargetDisplay" style="display: none;">
+                    <div class="target-label">Analyst Target:</div>
+                    <div class="target-price" id="targetPrice">-</div>
+                    <div class="price-difference" id="priceDifference">-</div>
+                </div>
                 <div class="timestamp" id="timestamp"></div>
             </div>
 
@@ -223,6 +228,9 @@
             updatePlatformCard('stockopedia', data.stockopedia);
             updatePlatformCard('stockanalysis', data.stockanalysis);
             
+            // Update price target display after price is available
+            updatePriceTargetDisplay(data.stockanalysis);
+            
             // Display consensus immediately
             displayConsensus(data);
             
@@ -264,6 +272,15 @@
             priceChange.textContent = '';
             priceChange.className = 'price-change';
             priceDisplay.style.display = 'inline-block';
+            
+            // Show price target loading state
+            const priceTargetDisplay = document.getElementById('priceTargetDisplay');
+            const targetPrice = document.getElementById('targetPrice');
+            const priceDifference = document.getElementById('priceDifference');
+            targetPrice.textContent = '⏳';
+            priceDifference.textContent = '...';
+            priceDifference.className = 'price-difference';
+            priceTargetDisplay.style.display = 'inline-block';
             
             // Show all cards with loading state
             const platforms = ['zacks', 'tipranks', 'barchart', 'stockopedia', 'stockanalysis'];
@@ -451,6 +468,51 @@
             } else {
                 // Hide price display if no data
                 priceDisplay.style.display = 'none';
+            }
+        }
+
+        function updatePriceTargetDisplay(stockAnalysisData) {
+            const priceTargetDisplay = document.getElementById('priceTargetDisplay');
+            const targetPrice = document.getElementById('targetPrice');
+            const priceDifference = document.getElementById('priceDifference');
+
+            if (stockAnalysisData && stockAnalysisData.success && stockAnalysisData.price_target && stockAnalysisData.price_target !== 'N/A') {
+                const target = parseFloat(stockAnalysisData.price_target);
+                
+                // Update target price
+                targetPrice.textContent = `$${target.toFixed(2)}`;
+
+                // Calculate price difference if current price is available
+                const currentPriceElement = document.getElementById('currentPrice');
+                const currentPriceText = currentPriceElement.textContent;
+                
+                // Extract current price from text like "$377.04 USD"
+                const priceMatch = currentPriceText.match(/\$([0-9,]+\.?[0-9]*)/);
+                
+                if (priceMatch) {
+                    const currentPrice = parseFloat(priceMatch[1].replace(/,/g, ''));
+                    const difference = target - currentPrice;
+                    const percentDifference = ((difference / currentPrice) * 100);
+                    
+                    // Format the difference display
+                    const sign = difference >= 0 ? '+' : '';
+                    const diffText = `${sign}${difference.toFixed(2)} (${sign}${percentDifference.toFixed(2)}%)`;
+                    
+                    priceDifference.textContent = diffText;
+                    
+                    // Apply color based on positive/negative
+                    priceDifference.className = 'price-difference ' + (difference >= 0 ? 'positive' : 'negative');
+                } else {
+                    // If current price not available, hide difference
+                    priceDifference.textContent = 'Calculating...';
+                    priceDifference.className = 'price-difference';
+                }
+
+                // Show the price target display
+                priceTargetDisplay.style.display = 'inline-block';
+            } else {
+                // Hide price target display if no data
+                priceTargetDisplay.style.display = 'none';
             }
         }
 
