@@ -246,6 +246,7 @@ def get_tipranks_rating(ticker):
         return build_error_response('score', str(e)[:50], additional_fields={'rating': 'Error'})
 
 def get_barchart_rating(ticker):
+    """Fetch Barchart opinion/signal rating with percentage score"""
     try:
         ticker = normalize_ticker(ticker)
         url = f"https://www.barchart.com/stocks/quotes/{ticker.lower()}/overview"
@@ -263,21 +264,75 @@ def get_barchart_rating(ticker):
         is_valid, title_text = validate_stock_page(soup, ticker)
         if not is_valid:
             return build_error_response('rating', 'Stock not found')
+        
+        # Look for Barchart Opinion/Signal rating and percentage
         rating = None
+        percentage_score = None
+        full_opinion_text = None
+        
+        # Get the full page text first for percentage extraction
+        page_text = soup.get_text().lower()
+        
+        # Method 1: Technical Opinion Widget
         technical_opinion = soup.find('div', class_='technical-opinion-widget')
         if technical_opinion:
             rating_link = technical_opinion.find('a', href=re.compile(r'/opinion'))
             if rating_link:
-                rating_text = rating_link.get_text(strip=True).lower()
-                rating = find_keywords_in_text(rating_text, BARCHART_RATING_KEYWORDS)
+                rating_text = rating_link.get_text(strip=True)
+                full_opinion_text = rating_text
+                rating_text_lower = rating_text.lower()
+                rating = find_keywords_in_text(rating_text_lower, BARCHART_RATING_KEYWORDS)
+        
+        # Always search for percentage in the full page text regardless of where we found the rating
+        percentage_patterns = [
+            r'(?:technical\s+opinion\s+rating\s+is\s+a?\s*)?(\d+)%\s*(buy|sell|hold|strong\s+buy|strong\s+sell)',
+            r'(\d+)\s*%\s*(buy|sell|hold)',
+            r'technical.*?(\d+)\s*%.*?(buy|sell|hold)',
+            r'opinion.*?(\d+)\s*%.*?(buy|sell|hold)'
+        ]
+        
+        for pattern in percentage_patterns:
+            percentage_match = re.search(pattern, page_text)
+            if percentage_match:
+                potential_percentage = percentage_match.group(1)
+                rating_from_percentage = percentage_match.group(2)
+                
+                # Map the percentage rating to our standard format
+                mapped_percentage_rating = find_keywords_in_text(rating_from_percentage, BARCHART_RATING_KEYWORDS)
+                
+                # Use this percentage if it's compatible with our found rating or if we don't have a rating yet
+                # Consider "Buy" and "Strong Buy" as compatible, "Sell" and "Strong Sell" as compatible
+                is_compatible = False
+                if not rating:
+                    is_compatible = True  # Use any percentage if we don't have a rating
+                elif rating and mapped_percentage_rating:
+                    # Check for compatible ratings
+                    if ('buy' in rating.lower() and 'buy' in mapped_percentage_rating.lower()) or \
+                       ('sell' in rating.lower() and 'sell' in mapped_percentage_rating.lower()) or \
+                       ('hold' in rating.lower() and 'hold' in mapped_percentage_rating.lower()) or \
+                       (rating == mapped_percentage_rating):
+                        is_compatible = True
+                
+                if is_compatible:
+                    percentage_score = potential_percentage
+                    if not rating:
+                        rating = mapped_percentage_rating
+                    break
+        
+        # Method 2: Page text search with context (if still not found)
         if not rating:
-            page_text = soup.get_text().lower()
             context_patterns = [r'(opinion|signal|rating|recommendation|consensus|analyst).*?{keyword}',
                               r'{keyword}.*?(opinion|signal|rating|recommendation)', r'barchart.*?{keyword}', r'{keyword}.*?barchart']
             rating = search_text_with_context(page_text, BARCHART_RATING_KEYWORDS, context_patterns)
+        
         if ticker.lower() in title_text.lower() or ticker.upper() in title_text:
             if rating:
-                return build_success_response({'rating': rating})
+                result = {'rating': rating}
+                if percentage_score:
+                    result['score'] = f"{percentage_score}%"
+                if full_opinion_text and len(full_opinion_text) > len(rating):
+                    result['opinion_text'] = full_opinion_text
+                return build_success_response(result)
             else:
                 return {'rating': 'Not Rated', 'status': 'Stock found but no rating', 'success': True}
         else:
