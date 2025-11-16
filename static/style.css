@@ -93,7 +93,7 @@ body {
 }
 
 .search-section {
-    padding: 40px;
+    padding: 30px 40px 20px 40px;
     text-align: center;
     background: #f8f9fa;
 }
@@ -211,7 +211,7 @@ body {
 }
 
 .results-section {
-    padding: 40px;
+    padding: 20px 40px 40px 40px;
     display: none;
 }
 
