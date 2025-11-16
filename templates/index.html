@@ -279,8 +279,7 @@
             const targetPrice = document.getElementById('targetPrice');
             const priceDifference = document.getElementById('priceDifference');
             targetPrice.textContent = '⏳';
-            priceDifference.textContent = '...';
-            priceDifference.className = 'price-difference';
+            priceDifference.style.display = 'none'; // Hide until data is ready
             priceTargetDisplay.style.display = 'inline-block';
             
             // Show all cards with loading state
@@ -500,13 +499,13 @@
                     const diffText = `${sign}${difference.toFixed(2)} (${sign}${percentDifference.toFixed(2)}%)`;
                     
                     priceDifference.textContent = diffText;
+                    priceDifference.style.display = 'block';
                     
                     // Apply color based on positive/negative
                     priceDifference.className = 'price-difference ' + (difference >= 0 ? 'positive' : 'negative');
                 } else {
-                    // If current price not available, hide difference
-                    priceDifference.textContent = 'Calculating...';
-                    priceDifference.className = 'price-difference';
+                    // If current price not available, hide difference completely
+                    priceDifference.style.display = 'none';
                 }
 
                 // Show the price target display
@@ -514,6 +513,7 @@
             } else {
                 // Hide price target display if no data
                 priceTargetDisplay.style.display = 'none';
+                priceDifference.style.display = 'none';
             }
         }
 
