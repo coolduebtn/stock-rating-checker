@@ -230,40 +230,57 @@ body {
 .price-display {
     margin: 15px 0;
     padding: 15px;
-    background: #f8f9fa;
+    background: linear-gradient(135deg, #34495e, #2c3e50);
     border-radius: 8px;
     display: inline-block;
+    color: white;
+    box-shadow: 0 2px 8px rgba(52, 73, 94, 0.3);
+    min-width: 200px;
+}
+
+.price-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-bottom: 3px;
+    font-weight: 500;
+    color: white;
 }
 
 .current-price {
-    font-size: 2rem;
+    font-size: 1.6rem;
     font-weight: bold;
-    color: #2c3e50;
-    margin-bottom: 5px;
+    color: white;
+    margin-bottom: 2px;
 }
 
 .price-change {
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .price-positive {
-    color: #27ae60;
+    background: rgba(46, 204, 113, 0.9);
+    color: #ffffff;
 }
 
 .price-negative {
-    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.9);
+    color: #ffffff;
 }
 
 .price-target-display {
     margin: 15px 0;
-    padding: 12px 15px;
+    padding: 15px;
     background: linear-gradient(135deg, #3498db, #2980b9);
     border-radius: 8px;
     display: inline-block;
     margin-left: 15px;
     color: white;
     box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+    min-width: 200px;
 }
 
 .target-label {
@@ -570,21 +587,27 @@ body {
         padding: 12px;
         width: 100%;
         box-sizing: border-box;
+        margin-left: 0;
+    }
+
+    .price-label {
+        font-size: 0.8rem;
+        margin-bottom: 2px;
     }
 
     .current-price {
-        font-size: 1.5rem;
-        margin-bottom: 3px;
+        font-size: 1.3rem;
+        margin-bottom: 2px;
     }
 
     .price-change {
-        font-size: 1rem;
+        font-size: 0.9rem;
     }
 
     .price-target-display {
         margin: 10px 0;
         margin-left: 0;
-        padding: 10px 12px;
+        padding: 12px;
         width: 100%;
         box-sizing: border-box;
     }

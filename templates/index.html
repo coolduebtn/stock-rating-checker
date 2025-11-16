@@ -44,6 +44,7 @@
             <div class="ticker-header">
                 <div class="ticker-symbol" id="tickerSymbol"></div>
                 <div class="price-display" id="priceDisplay" style="display: none;">
+                    <div class="price-label">Current Price:</div>
                     <div class="current-price" id="currentPrice">-</div>
                     <div class="price-change" id="priceChange">-</div>
                 </div>
@@ -454,7 +455,7 @@
                 const currency = priceData.currency || 'USD';
 
                 // Update current price
-                currentPrice.textContent = `$${price} ${currency}`;
+                currentPrice.textContent = `$${price}`;
 
                 // Update change with appropriate color and sign
                 const changeText = `${change >= 0 ? '+' : ''}${change} (${changePercent >= 0 ? '+' : ''}${changePercent}%)`;
